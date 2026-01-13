@@ -2,24 +2,22 @@ import type { SuggestPartnersInput } from "@/ai/flows/partner-finder-suggest-par
 
 export type Athlete = {
   id: string;
-  name: string;
   email: string;
-  avatarUrl: string;
+  firstName: string;
+  lastName: string;
   idNumber: string;
-  phone: string;
+  phoneNumber: string;
   gender: 'Male' | 'Female' | 'Other';
   country: string;
-  state: string;
+  department: string;
   city: string;
-  boxAffiliation: string;
-  coachName: string;
-  socials: {
-    instagram?: string;
-    tiktok?: string;
-  };
-  skillLevel: 'RX' | 'Intermediate' | 'Scaled';
-  personalRecords: Record<string, number | string>;
-  competitionHistory: {
+  boxAffiliationId?: string;
+  coachName?: string;
+  instagramHandle?: string;
+  tiktokHandle?: string;
+  profilePictureUrl: string;
+  personalRecords?: Record<string, number | string>;
+  competitionHistory?: {
     competitionName: string;
     placing: number;
   }[];
