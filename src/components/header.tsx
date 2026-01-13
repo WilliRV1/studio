@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu } from "lucide-react";
+import { Menu, LogOut } from "lucide-react";
 
 import { WodMatchLogo } from "@/components/icons";
 import { Button } from "@/components/ui/button";
@@ -11,9 +11,20 @@ import {
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { currentUser } from "@/lib/data";
+import { useUser } from "@/firebase/provider";
+import { getAuth, signOut } from "firebase/auth";
+
 
 const navLinks = [
   { href: "/competitions", label: "Competitions" },
@@ -23,6 +34,12 @@ const navLinks = [
 
 export function Header() {
   const pathname = usePathname();
+  const { user, isUserLoading } = useUser();
+  const auth = getAuth();
+
+  const handleSignOut = async () => {
+    await signOut(auth);
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -85,13 +102,38 @@ export function Header() {
           </div>
           <nav className="flex items-center">
              <div className="flex items-center gap-4">
-              <Button variant="ghost" size="sm">Log In</Button>
-              <Button size="sm">Sign Up</Button>
-               {/* Or show user avatar if logged in */}
-              {/* <Avatar className="h-9 w-9">
-                <AvatarImage src={currentUser.avatarUrl} alt={currentUser.name} />
-                <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
-              </Avatar> */}
+              {isUserLoading ? (
+                <div className="h-9 w-24 rounded-md animate-pulse bg-muted" />
+              ) : user ? (
+                 <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                     <Avatar className="h-9 w-9 cursor-pointer">
+                        <AvatarImage src={user.photoURL || undefined} alt={user.displayName || user.email || ''} />
+                        <AvatarFallback>{user.displayName?.charAt(0) || user.email?.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild><Link href="/dashboard">Dashboard</Link></DropdownMenuItem>
+                    <DropdownMenuItem asChild><Link href="/profile">Profile Settings</Link></DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleSignOut} className="text-red-500 focus:text-red-500 focus:bg-red-500/10">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Log out</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <>
+                  <Button variant="ghost" size="sm" asChild>
+                    <Link href="/login">Log In</Link>
+                  </Button>
+                  <Button size="sm" asChild>
+                    <Link href="/signup">Sign Up</Link>
+                  </Button>
+                </>
+              )}
             </div>
           </nav>
         </div>
