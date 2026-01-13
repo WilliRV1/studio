@@ -10,10 +10,12 @@ export type Athlete = {
   gender: 'Male' | 'Female' | 'Other';
   country: string;
   state: string;
+  city: string;
   boxAffiliation: string;
   coachName: string;
   socials: {
     instagram?: string;
+    tiktok?: string;
   };
   skillLevel: 'RX' | 'Intermediate' | 'Scaled';
   personalRecords: Record<string, number | string>;
