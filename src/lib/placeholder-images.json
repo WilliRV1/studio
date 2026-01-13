@@ -1,3 +1,70 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "hero-bg",
+      "description": "CrossFit athlete lifting a barbell in a dramatic, dark gym setting.",
+      "imageUrl": "https://images.unsplash.com/photo-1632758243488-7e6f9173cfa1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxjcm9zc2ZpdCUyMGd5bXxlbnwwfHx8fDE3NjgzNDEwNzN8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "crossfit gym"
+    },
+    {
+      "id": "comp-banner-1",
+      "description": "Banner for 'The Titan Games' competition.",
+      "imageUrl": "https://images.unsplash.com/photo-1758875569517-559a631fb44d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxjcm9zc2ZpdCUyMGNvbXBldGl0aW9ufGVufDB8fHx8MTc2ODM0MTA3M3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "crossfit competition"
+    },
+    {
+      "id": "comp-banner-2",
+      "description": "Banner for 'Coastal Clash' competition.",
+      "imageUrl": "https://images.unsplash.com/photo-1663791088119-07535b0fafeb?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxhdGhsZXRlJTIwd29ya291dHxlbnwwfHx8fDE3NjgzMTY5MjR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "athlete workout"
+    },
+    {
+      "id": "comp-banner-3",
+      "description": "Banner for 'Urban Throwdown' competition.",
+      "imageUrl": "https://images.unsplash.com/photo-1722392308109-37b94319caae?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxjaXR5JTIwZml0bmVzc3xlbnwwfHx8fDE3NjgzNDEwNzN8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "city fitness"
+    },
+    {
+      "id": "comp-banner-4",
+      "description": "Banner for 'Mountain Mayhem' competition.",
+      "imageUrl": "https://images.unsplash.com/photo-1726688648196-c5d505af321e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxtb3VudGFpbiUyMHNwb3J0fGVufDB8fHx8MTc2ODM0MTA3NHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "mountain sport"
+    },
+    {
+      "id": "avatar-1",
+      "description": "Athlete profile picture 1",
+      "imageUrl": "https://images.unsplash.com/photo-1695918425489-6c56df5eff9b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxhdGhsZXRlJTIwcG9ydHJhaXR8ZW58MHx8fHwxNzY4MjUwMTE3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "athlete portrait"
+    },
+    {
+      "id": "avatar-2",
+      "description": "Athlete profile picture 2",
+      "imageUrl": "https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8d29tYW4lMjBmaXRuZXNzfGVufDB8fHx8MTc2ODM0MTA3M3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "woman fitness"
+    },
+    {
+      "id": "avatar-3",
+      "description": "Athlete profile picture 3",
+      "imageUrl": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxtYW4lMjBwb3J0cmFpdHxlbnwwfHx8fDE3NjgyNTQ3NzR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "man portrait"
+    },
+    {
+      "id": "avatar-4",
+      "description": "Athlete profile picture 4",
+      "imageUrl": "https://images.unsplash.com/photo-1614283233556-f35b0c801ef1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHx3b21hbiUyMHBvcnRyYWl0fGVufDB8fHx8MTc2ODMzNTg3OXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "woman portrait"
+    },
+    {
+      "id": "avatar-5",
+      "description": "Athlete profile picture 5",
+      "imageUrl": "https://images.unsplash.com/photo-1600026453284-65cc5a6b7aa8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxmaXRuZXNzJTIwbWFufGVufDB8fHx8MTc2ODM0MTA3NHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "fitness man"
+    },
+    {
+      "id": "avatar-6",
+      "description": "Athlete profile picture 6",
+      "imageUrl": "https://images.unsplash.com/photo-1686561394788-e450f15ff1e5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxmaXRuZXNzJTIwd29tYW58ZW58MHx8fHwxNzY4MzQxMDc0fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "fitness woman"
+    }
+  ]
 }
