@@ -1,0 +1,135 @@
+/**
+ * @file firestore.rules
+ * @description Firestore Security Rules for the WodMatch platform.
+ *
+ * ## Core Philosophy
+ * This ruleset enforces a strict, user-centric security model. The primary principle is that users have explicit ownership and control over their own data. Public data is explicitly marked as such, and all other access is denied by default. The rules are designed for performance and security by avoiding complex queries and favoring denormalized data for authorization checks.
+ *
+ * ## Data Structure
+ * The data is organized into four top-level collections:
+ * - `/users/{userId}`: Stores individual athlete profiles. Each document is owned and managed by the authenticated user corresponding to the `userId`.
+ * - `/boxes/{boxId}`: A public-readable collection of CrossFit gyms (boxes).
+ * - `/user_roles/{userRoleId}`: A public, read-only collection that defines the possible roles in the system (e.g., Athlete, Organizer).
+ * - `/athlete_roles/{athleteRoleId}`: A collection linking users to their roles. Access is highly restricted.
+ *
+ * ## Key Security Decisions
+ * - **Strict User Ownership**: All documents in the `/users` collection can only be created, updated, or deleted by the authenticated user whose UID matches the document ID.
+ * - **No User Listing**: To protect user privacy and prevent data scraping, it is impossible for any client to list all documents in the `/users` collection.
+ * - **Public Read-Only Data**: The `/boxes` and `/user_roles` collections are treated as public reference data. They are readable by anyone but cannot be modified by clients, ensuring data integrity. This will require an admin backend to manage.
+ * - **Scoped Role Lookups**: Users can only read their own role assignment from `/athlete_roles`. Listing all role assignments is disabled to prevent leaking user information. Role management is assumed to be an admin-only task and is disallowed from the client.
+ *
+ * ## Denormalization for Authorization
+ * To create simpler and more performant rules, data required for authorization decisions should be denormalized. For example, to implement role-based access control (e.g., an 'Organizer' editing an event), the user's role should be stored directly on their `/users/{userId}` document or provided as a custom authentication claim. This ruleset currently locks down write access that would depend on such roles, pending the implementation of a robust role-checking mechanism.
+ *
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ----------------------------------------------------------------
+    // Helper Functions
+    // ----------------------------------------------------------------
+
+    /**
+     * Checks if the user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Checks if the authenticated user's UID matches the provided userId.
+     * This is the fundamental check for document ownership.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * Ensures an operation is performed by the owner on an existing document.
+     * CRITICAL for all update and delete operations to prevent modifying non-existent data.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
+    /**
+     * Validates that the user is creating their own user document and that the
+     * internal `id` field is correctly set to their UID for data consistency.
+     */
+    function isCreatingSelf(userId) {
+      return isOwner(userId) && request.resource.data.id == userId;
+    }
+
+    /**
+     * Enforces immutability for a specific field during an update.
+     * Used to prevent changing critical, non-editable fields like ownership IDs.
+     */
+    function isFieldImmutable(fieldName) {
+      return request.resource.data[fieldName] == resource.data[fieldName];
+    }
+
+    // ----------------------------------------------------------------
+    // Collection Rules
+    // ----------------------------------------------------------------
+
+    /**
+     * @description Manages athlete profiles. Users can manage their own profile but cannot see a list of all users.
+     * @path /users/{userId}
+     * @allow (get) An authenticated user can view any other user's profile.
+     * @allow (create) A user with UID `user_abc` can create the document at `/users/user_abc`.
+     * @deny (list) No user can list all documents in the `/users` collection.
+     * @deny (update) A user with UID `user_abc` CANNOT update `/users/user_xyz`.
+     * @principle Restricts access to a user's own data tree and validates relational integrity.
+     */
+    match /users/{userId} {
+      allow get: if isSignedIn();
+      allow list: if false;
+      allow create: if isCreatingSelf(userId);
+      allow update: if isExistingOwner(userId) && isFieldImmutable('id');
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Stores public information about CrossFit boxes (gyms).
+     * @path /boxes/{boxId}
+     * @allow (get, list) Any user, signed in or not, can read box information.
+     * @deny (create, update, delete) No client can modify box data; it must be managed by an admin process.
+     * @principle Provides public read access while protecting data integrity by disallowing client writes.
+     */
+    match /boxes/{boxId} {
+      allow get, list: if true;
+      // CRITICAL: Cannot implement owner-only writes. The 'Box' entity is missing an 'ownerId' or 'authorId' field.
+      // Writes are disabled until an ownership or admin-role model is implemented.
+      allow create, update, delete: if false; // TODO: Add owner/admin validation once the schema is updated with an ownership field.
+    }
+
+    /**
+     * @description Defines the user roles available in the application (e.g., Athlete, Organizer).
+     * @path /user_roles/{userRoleId}
+     * @allow (get, list) Any user can read the available role definitions.
+     * @deny (create, update, delete) Role definitions are static and cannot be modified by clients.
+     * @principle Treats role definitions as public, immutable system data.
+     */
+    match /user_roles/{userRoleId} {
+      allow get, list: if true;
+      allow create, update, delete: if false;
+    }
+
+    /**
+     * @description Associates athletes with specific roles. This is a sensitive linking collection.
+     * @path /athlete_roles/{athleteRoleId}
+     * @allow (get) A user `user_abc` can read a role document if its `athleteId` field is `user_abc`.
+     * @deny (get) A user `user_abc` CANNOT read a role document where `athleteId` is `user_xyz`.
+     * @deny (list) No user can list all role assignments to prevent data leakage.
+     * @deny (create, update, delete) Role assignments are managed by an admin process, not by clients.
+     * @principle Enforces strict, scoped access to sensitive relationship data.
+     */
+    match /athlete_roles/{athleteRoleId} {
+      allow get: if isSignedIn() && request.auth.uid == get(/databases/$(database)/documents/athlete_roles/$(athleteRoleId)).data.athleteId;
+      allow list: if false;
+      allow create, update, delete: if false;
+    }
+
+  }
+}

@@ -1,0 +1,241 @@
+{
+  "entities": {
+    "Athlete": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Athlete",
+      "type": "object",
+      "description": "Represents an athlete profile within the WodMatch platform.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the athlete."
+        },
+        "email": {
+          "type": "string",
+          "description": "Athlete's email address for login and communication.",
+          "format": "email"
+        },
+        "firstName": {
+          "type": "string",
+          "description": "Athlete's first name."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "Athlete's last name."
+        },
+        "idNumber": {
+          "type": "string",
+          "description": "Athlete's identification number (e.g., cédula). Required for insurance purposes."
+        },
+        "phoneNumber": {
+          "type": "string",
+          "description": "Athlete's phone number for contact purposes."
+        },
+        "gender": {
+          "type": "string",
+          "description": "Athlete's gender (Male, Female, Other)."
+        },
+        "country": {
+          "type": "string",
+          "description": "Athlete's country of residence."
+        },
+        "department": {
+          "type": "string",
+          "description": "Athlete's department/state of residence (specifically for Colombia with intelligent selection)."
+        },
+        "city": {
+          "type": "string",
+          "description": "Athlete's city of residence."
+        },
+        "boxAffiliationId": {
+          "type": "string",
+          "description": "Reference to Box. (Relationship: Box 1:N Athlete)"
+        },
+        "coachName": {
+          "type": "string",
+          "description": "Name of the athlete's coach."
+        },
+        "instagramHandle": {
+          "type": "string",
+          "description": "Athlete's Instagram handle."
+        },
+        "tiktokHandle": {
+          "type": "string",
+          "description": "Athlete's TikTok handle."
+        },
+        "profilePictureUrl": {
+          "type": "string",
+          "description": "URL of the athlete's profile picture."
+        },
+        "personalRecords": {
+          "type": "string",
+          "description": "Personal Records of the athlete"
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "firstName",
+        "lastName",
+        "idNumber",
+        "phoneNumber",
+        "gender",
+        "country",
+        "department",
+        "city",
+        "boxAffiliationId"
+      ]
+    },
+    "Box": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Box",
+      "type": "object",
+      "description": "Represents a CrossFit box (gym).",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the box."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the CrossFit box."
+        },
+        "location": {
+          "type": "string",
+          "description": "Location of the CrossFit box."
+        },
+        "contactEmail": {
+          "type": "string",
+          "description": "Contact email for the CrossFit box.",
+          "format": "email"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "location",
+        "contactEmail"
+      ]
+    },
+    "UserRole": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserRole",
+      "type": "object",
+      "description": "Defines the role of a user within the WodMatch platform.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user role."
+        },
+        "roleName": {
+          "type": "string",
+          "description": "Name of the role (e.g., Athlete, Organizer, Administrator)."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the role and its permissions."
+        }
+      },
+      "required": [
+        "id",
+        "roleName",
+        "description"
+      ]
+    },
+    "AthleteRole": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "AthleteRole",
+      "type": "object",
+      "description": "Associates an athlete with a specific role.",
+      "properties": {
+        "athleteId": {
+          "type": "string",
+          "description": "Reference to Athlete. (Relationship: Athlete 1:N AthleteRole)"
+        },
+        "roleId": {
+          "type": "string",
+          "description": "Reference to UserRole. (Relationship: UserRole 1:N AthleteRole)"
+        }
+      },
+      "required": [
+        "athleteId",
+        "roleId"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "Athlete",
+          "schema": {
+            "$ref": "#/backend/entities/Athlete"
+          },
+          "description": "Stores athlete profiles, social information, PRs, and statistics. The `userId` parameter corresponds to the Firebase Authentication UID.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The Firebase Authentication UID of the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/boxes/{boxId}",
+        "definition": {
+          "entityName": "Box",
+          "schema": {
+            "$ref": "#/backend/entities/Box"
+          },
+          "description": "Stores information about CrossFit boxes (gyms).",
+          "params": [
+            {
+              "name": "boxId",
+              "description": "The unique identifier of the CrossFit box."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/athlete_roles/{athleteRoleId}",
+        "definition": {
+          "entityName": "AthleteRole",
+          "schema": {
+            "$ref": "#/backend/entities/AthleteRole"
+          },
+          "description": "Associates athletes with specific roles (Athlete, Organizer, Administrator).",
+          "params": [
+            {
+              "name": "athleteRoleId",
+              "description": "The unique identifier of the AthleteRole association."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/user_roles/{userRoleId}",
+        "definition": {
+          "entityName": "UserRole",
+          "schema": {
+            "$ref": "#/backend/entities/UserRole"
+          },
+          "description": "Stores user roles and their descriptions.  Roles can be Athlete, Organizer, Administrator, etc.",
+          "params": [
+            {
+              "name": "userRoleId",
+              "description": "The unique identifier of the user role."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "This Firestore structure prioritizes authorization independence and QAPs. User profiles and related data are stored under the `/users/{userId}` path, ensuring clear ownership. The `Athlete` entity includes all necessary information for the athlete profile. The `Box` entity contains details about CrossFit boxes. Roles are managed through the `athlete_roles` collection, associating athletes with roles (Athlete, Organizer, Administrator). This denormalized approach removes the need for complex `get()` calls in security rules. By storing all athlete data, box affiliation and social information in the athlete profile, access can be managed efficiently, and rules are simplified.\n\nQAPs are addressed by storing each entity in its dedicated collection with uniform security posture, ensuring secure `list` operations. Authorization Independence is ensured by denormalizing data. For example the `boxAffiliationId` attribute is stored directly within the `/users/{userId}/athlete/{athleteId}` document. In a collaborative scenario, such as events or teams, denormalizing the membership map into each document would provide the authorization context needed for rules and atomic batch operations."
+  }
+}
