@@ -1,9 +1,9 @@
 'use client';
 
-import { useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { useUser, useFirestore, useMemoFirebase, useDoc, useCollection } from '@/firebase';
+import { doc, collection, query, where } from 'firebase/firestore';
 
-import type { Athlete, Registration } from '@/lib/types';
+import type { Athlete, Registration, Competition } from '@/lib/types';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -27,6 +27,16 @@ const getStatusBadgeVariant = (status: Registration['paymentStatus']) => {
       return 'outline';
   }
 };
+
+const getStatusText = (status: Registration['paymentStatus']) => {
+    switch (status) {
+        case 'approved': return 'Aprobado';
+        case 'pending_approval': return 'Pendiente de Aprobación';
+        case 'pending_payment': return 'Pendiente de Pago';
+        case 'rejected': return 'Rechazado';
+        default: return 'Desconocido';
+    }
+}
 
 function ProfileSkeleton() {
     return (
@@ -88,10 +98,23 @@ export default function DashboardPage() {
   
   const { data: athlete, isLoading: isAthleteLoading } = useDoc<Athlete>(userDocRef);
 
-  // TODO: Fetch user registrations from Firestore
-  const userRegistrations: Registration[] = [];
+  const registrationsRef = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(collection(firestore, 'registrations'), where('athleteId', '==', user.uid));
+  }, [firestore, user]);
 
-  if (isUserLoading || isAthleteLoading) {
+  const { data: userRegistrations, isLoading: areRegistrationsLoading } = useCollection<Registration>(registrationsRef);
+
+  // We fetch all competitions to easily look up names.
+  // For a larger scale app, this might be optimized.
+  const competitionsRef = useMemoFirebase(() => {
+    if(!firestore) return null;
+    return collection(firestore, 'competitions');
+  }, [firestore]);
+  const { data: competitions } = useCollection<Competition>(competitionsRef);
+
+
+  if (isUserLoading || isAthleteLoading || areRegistrationsLoading) {
     return (
        <div className="container mx-auto py-8 md:py-12">
             <ProfileSkeleton />
@@ -203,19 +226,22 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                {userRegistrations.length > 0 ? (
+                {userRegistrations && userRegistrations.length > 0 ? (
                   userRegistrations.map((reg) => {
-                    // TODO: Fetch competition data based on reg.competitionId
-                    const compName = 'Nombre de la Competición'; // Placeholder
+                    const competition = competitions?.find(c => c.id === reg.competitionId);
+                    const category = competition?.categories.find(cat => cat.id === reg.categoryId);
+                    const compName = competition?.name || 'Competición no encontrada';
+                    const categoryName = category?.name || 'Categoría no encontrada';
+
                     return (
                       <div key={reg.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 border rounded-lg">
                         <div>
                           <h3 className="font-bold">{compName}</h3>
-                          <p className="text-sm text-muted-foreground">{reg.teamName || 'Individual'}</p>
+                          <p className="text-sm text-muted-foreground">{categoryName} / {reg.teamName || 'Individual'}</p>
                         </div>
                         <div className="flex items-center gap-4">
                           <Badge variant={getStatusBadgeVariant(reg.paymentStatus)} className="capitalize">
-                            {reg.paymentStatus.replace('_', ' ')}
+                            {getStatusText(reg.paymentStatus)}
                           </Badge>
                           <Button variant="secondary" size="sm">Gestionar</Button>
                         </div>
