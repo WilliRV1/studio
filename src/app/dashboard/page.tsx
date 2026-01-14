@@ -131,6 +131,10 @@ export default function DashboardPage() {
         </div>
     );
   }
+  
+  const personalRecords = athlete.personalRecords && typeof athlete.personalRecords === 'object' 
+    ? Object.entries(athlete.personalRecords)
+    : [];
 
   return (
     <div className="container mx-auto py-8 md:py-12">
@@ -195,14 +199,14 @@ export default function DashboardPage() {
                     </Button>
                 </CardHeader>
                 <CardContent>
-                    {athlete.personalRecords ? (
+                    {personalRecords.length > 0 ? (
                          <div className="grid grid-cols-2 gap-4 text-sm">
-                            {/*Object.entries(athlete.personalRecords).map(([key, value]) => (
+                            {personalRecords.map(([key, value]) => (
                                 <div key={key} className="flex justify-between border-b pb-2">
-                                    <span className="text-muted-foreground">{key}</span>
+                                    <span className="text-muted-foreground capitalize">{key.replace(/([A-Z])/g, ' $1')}</span>
                                     <span className="font-semibold">{value}</span>
                                 </div>
-                            ))*/}
+                            ))}
                         </div>
                     ): (
                         <div className="text-center py-6 border-2 border-dashed rounded-lg">
