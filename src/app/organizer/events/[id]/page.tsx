@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams, useRouter } from "next/navigation";
-import { useDoc, useFirestore, useMemoFirebase, useUser } from "@/firebase";
+import { useDoc, useFirestore, useMemoFirebase, useUser, useCollection } from "@/firebase";
 import { doc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
 import type { Competition, Category, Workout } from "@/lib/types";
 import { z } from "zod";
@@ -15,7 +15,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
-import { Calendar, DollarSign, Edit, MapPin, PlusCircle, Trash2, Users, Dumbbell } from "lucide-react";
+import { Calendar, DollarSign, Edit, MapPin, PlusCircle, Trash2, Users, Dumbbell, BarChart2 } from "lucide-react";
 import { format } from "date-fns";
 import {
   Dialog,
@@ -45,6 +45,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RegistrationsDashboard } from "./_components/registrations-dashboard";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ResultsDashboard } from "./_components/results-dashboard";
 
 
 const categorySchema = z.object({
@@ -234,220 +236,239 @@ export default function EventManagementPage() {
                     </CardHeader>
                 </Card>
 
-                {/* Categories Card */}
-                <Card>
-                    <CardHeader className="flex flex-row justify-between items-center">
-                        <div>
-                            <CardTitle className="font-headline">Categorías del Evento</CardTitle>
-                            <CardDescription>Añade y gestiona las categorías para tu competencia.</CardDescription>
-                        </div>
-                         <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
-                            <DialogTrigger asChild>
-                                <Button>
-                                    <PlusCircle className="mr-2 h-4 w-4" />
-                                    Añadir Categoría
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent className="sm:max-w-[425px]">
-                                <DialogHeader>
-                                <DialogTitle className="font-headline">Nueva Categoría</DialogTitle>
-                                <DialogDescription>
-                                    Completa los detalles para la nueva categoría de tu evento.
-                                </DialogDescription>
-                                </DialogHeader>
-                                <FormProvider {...categoryMethods}>
-                                <form onSubmit={categoryMethods.handleSubmit(onCategorySubmit)} className="space-y-4 py-4">
-                                     <FormField control={categoryMethods.control} name="name" render={({ field }) => (
-                                        <FormItem><FormLabel>Nombre</FormLabel><FormControl><Input placeholder="Ej: RX Individual" {...field} /></FormControl><FormMessage /></FormItem>
-                                     )} />
-                                      <div className="grid grid-cols-2 gap-4">
-                                        <FormField control={categoryMethods.control} name="type" render={({ field }) => (
-                                            <FormItem><FormLabel>Tipo</FormLabel>
-                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                <FormControl><SelectTrigger><SelectValue placeholder="Selecciona..." /></SelectTrigger></FormControl>
-                                                <SelectContent><SelectItem value="Individual">Individual</SelectItem><SelectItem value="Pairs">Parejas</SelectItem><SelectItem value="Team">Equipo</SelectItem></SelectContent>
-                                            </Select><FormMessage /></FormItem>
-                                        )} />
-                                        <FormField control={categoryMethods.control} name="gender" render={({ field }) => (
-                                             <FormItem><FormLabel>Género</FormLabel>
-                                            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={watchCategoryType === 'Individual'}>
-                                                <FormControl><SelectTrigger><SelectValue placeholder="Selecciona..." /></SelectTrigger></FormControl>
-                                                <SelectContent><SelectItem value="Male">Masculino</SelectItem><SelectItem value="Female">Femenino</SelectItem><SelectItem value="Mixed">Mixto</SelectItem></SelectContent>
-                                            </Select><FormMessage /></FormItem>
-                                        )} />
-                                      </div>
-                                       <div className="grid grid-cols-2 gap-4">
-                                        <FormField control={categoryMethods.control} name="price" render={({ field }) => (
-                                            <FormItem><FormLabel>Precio (COP)</FormLabel><FormControl><Input type="number" placeholder="150000" {...field} /></FormControl><FormMessage /></FormItem>
-                                        )} />
-                                        <FormField control={categoryMethods.control} name="spots" render={({ field }) => (
-                                            <FormItem><FormLabel>Cupos</FormLabel><FormControl><Input type="number" placeholder="50" {...field} /></FormControl><FormMessage /></FormItem>
-                                        )} />
-                                       </div>
-                                     <DialogFooter className="pt-4">
-                                         <DialogClose asChild>
-                                            <Button type="button" variant="secondary">Cancelar</Button>
-                                         </DialogClose>
-                                        <Button type="submit">Crear Categoría</Button>
-                                    </DialogFooter>
-                                </form>
-                                </FormProvider>
-                            </DialogContent>
-                        </Dialog>
+                <Tabs defaultValue="registrations">
+                    <TabsList className="mb-6 grid w-full grid-cols-4">
+                        <TabsTrigger value="registrations">Inscritos</TabsTrigger>
+                        <TabsTrigger value="categories">Categorías</TabsTrigger>
+                        <TabsTrigger value="wods">WODs</TabsTrigger>
+                        <TabsTrigger value="results">Resultados</TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="registrations">
+                        <RegistrationsDashboard competition={competition} />
+                    </TabsContent>
+                    
+                    <TabsContent value="categories">
+                        <Card>
+                            <CardHeader className="flex flex-row justify-between items-center">
+                                <div>
+                                    <CardTitle className="font-headline">Categorías del Evento</CardTitle>
+                                    <CardDescription>Añade y gestiona las categorías para tu competencia.</CardDescription>
+                                </div>
+                                <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
+                                    <DialogTrigger asChild>
+                                        <Button>
+                                            <PlusCircle className="mr-2 h-4 w-4" />
+                                            Añadir Categoría
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="sm:max-w-[425px]">
+                                        <DialogHeader>
+                                        <DialogTitle className="font-headline">Nueva Categoría</DialogTitle>
+                                        <DialogDescription>
+                                            Completa los detalles para la nueva categoría de tu evento.
+                                        </DialogDescription>
+                                        </DialogHeader>
+                                        <FormProvider {...categoryMethods}>
+                                        <form onSubmit={categoryMethods.handleSubmit(onCategorySubmit)} className="space-y-4 py-4">
+                                            <FormField control={categoryMethods.control} name="name" render={({ field }) => (
+                                                <FormItem><FormLabel>Nombre</FormLabel><FormControl><Input placeholder="Ej: RX Individual" {...field} /></FormControl><FormMessage /></FormItem>
+                                            )} />
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <FormField control={categoryMethods.control} name="type" render={({ field }) => (
+                                                    <FormItem><FormLabel>Tipo</FormLabel>
+                                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                        <FormControl><SelectTrigger><SelectValue placeholder="Selecciona..." /></SelectTrigger></FormControl>
+                                                        <SelectContent><SelectItem value="Individual">Individual</SelectItem><SelectItem value="Pairs">Parejas</SelectItem><SelectItem value="Team">Equipo</SelectItem></SelectContent>
+                                                    </Select><FormMessage /></FormItem>
+                                                )} />
+                                                <FormField control={categoryMethods.control} name="gender" render={({ field }) => (
+                                                    <FormItem><FormLabel>Género</FormLabel>
+                                                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={watchCategoryType === 'Individual'}>
+                                                        <FormControl><SelectTrigger><SelectValue placeholder="Selecciona..." /></SelectTrigger></FormControl>
+                                                        <SelectContent><SelectItem value="Male">Masculino</SelectItem><SelectItem value="Female">Femenino</SelectItem><SelectItem value="Mixed">Mixto</SelectItem></SelectContent>
+                                                    </Select><FormMessage /></FormItem>
+                                                )} />
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <FormField control={categoryMethods.control} name="price" render={({ field }) => (
+                                                    <FormItem><FormLabel>Precio (COP)</FormLabel><FormControl><Input type="number" placeholder="150000" {...field} /></FormControl><FormMessage /></FormItem>
+                                                )} />
+                                                <FormField control={categoryMethods.control} name="spots" render={({ field }) => (
+                                                    <FormItem><FormLabel>Cupos</FormLabel><FormControl><Input type="number" placeholder="50" {...field} /></FormControl><FormMessage /></FormItem>
+                                                )} />
+                                            </div>
+                                            <DialogFooter className="pt-4">
+                                                <DialogClose asChild>
+                                                    <Button type="button" variant="secondary">Cancelar</Button>
+                                                </DialogClose>
+                                                <Button type="submit">Crear Categoría</Button>
+                                            </DialogFooter>
+                                        </form>
+                                        </FormProvider>
+                                    </DialogContent>
+                                </Dialog>
 
-                    </CardHeader>
-                    <CardContent>
-                       {competition.categories && competition.categories.length > 0 ? (
-                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                               {competition.categories.map((cat) => (
-                                   <Card key={cat.id} className="relative group">
-                                        <CardHeader>
-                                            <CardTitle className="font-headline text-lg">{cat.name}</CardTitle>
-                                            <div className="flex items-center gap-2 text-sm">
-                                                <Badge variant="secondary">{cat.type}</Badge>
-                                                <Badge variant="secondary">{cat.gender}</Badge>
-                                            </div>
-                                        </CardHeader>
-                                        <CardContent className="space-y-2 text-sm">
-                                            <div className="flex justify-between">
-                                                <span className="text-muted-foreground">Precio:</span>
-                                                <span className="font-semibold flex items-center"><DollarSign className="h-4 w-4 mr-1"/>{cat.price.toLocaleString('es-CO')}</span>
-                                            </div>
-                                             <div className="flex justify-between">
-                                                <span className="text-muted-foreground">Cupos:</span>
-                                                <span className="font-semibold flex items-center"><Users className="h-4 w-4 mr-1"/>{cat.registeredCount} / {cat.spots}</span>
-                                            </div>
-                                        </CardContent>
-                                        <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <Button variant="ghost" size="icon" className="h-8 w-8"><Edit className="h-4 w-4" /></Button>
-                                            <AlertDialog>
-                                                <AlertDialogTrigger asChild>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive"><Trash2 className="h-4 w-4" /></Button>
-                                                </AlertDialogTrigger>
-                                                <AlertDialogContent>
-                                                    <AlertDialogHeader>
-                                                        <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-                                                        <AlertDialogDescription>
-                                                            Esta acción no se puede deshacer. Esto eliminará permanentemente la categoría "{cat.name}".
-                                                        </AlertDialogDescription>
-                                                    </AlertDialogHeader>
-                                                    <AlertDialogFooter>
-                                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                        <AlertDialogAction onClick={() => handleDelete(cat, 'category')}>Eliminar</AlertDialogAction>
-                                                    </AlertDialogFooter>
-                                                </AlertDialogContent>
-                                            </AlertDialog>
-                                        </div>
-                                   </Card>
-                               ))}
-                           </div>
-                       ) : (
-                        <div className="text-center py-12 border-2 border-dashed rounded-lg">
-                            <h3 className="text-xl font-semibold mb-2">Aún no hay categorías</h3>
-                            <p className="text-muted-foreground mb-4">Haz clic en "Añadir Categoría" para empezar a configurar tu evento.</p>
-                        </div>
-                       )}
-                    </CardContent>
-                </Card>
-                
-                {/* WODs Card */}
-                <Card>
-                    <CardHeader className="flex flex-row justify-between items-center">
-                        <div>
-                            <CardTitle className="font-headline">WODs de la Competencia</CardTitle>
-                            <CardDescription>Define los workouts que los atletas enfrentarán.</CardDescription>
-                        </div>
-                         <Dialog open={isWodDialogOpen} onOpenChange={setIsWodDialogOpen}>
-                            <DialogTrigger asChild>
-                                <Button>
-                                    <PlusCircle className="mr-2 h-4 w-4" />
-                                    Añadir WOD
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent className="sm:max-w-md">
-                                <DialogHeader>
-                                    <DialogTitle className="font-headline">Nuevo WOD</DialogTitle>
-                                    <DialogDescription>Completa los detalles para el nuevo workout.</DialogDescription>
-                                </DialogHeader>
-                                <FormProvider {...wodMethods}>
-                                    <form onSubmit={wodMethods.handleSubmit(onWodSubmit)} className="space-y-4 py-4">
-                                        <FormField control={wodMethods.control} name="name" render={({ field }) => (
-                                            <FormItem><FormLabel>Nombre del WOD</FormLabel><FormControl><Input placeholder="Ej: 'Chipper de la Muerte'" {...field} /></FormControl><FormMessage /></FormItem>
-                                        )} />
-                                        <FormField control={wodMethods.control} name="type" render={({ field }) => (
-                                            <FormItem><FormLabel>Tipo de WOD</FormLabel>
-                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                <FormControl><SelectTrigger><SelectValue placeholder="Selecciona el tipo..." /></SelectTrigger></FormControl>
-                                                <SelectContent>
-                                                    <SelectItem value="For Time">For Time</SelectItem>
-                                                    <SelectItem value="AMRAP">AMRAP</SelectItem>
-                                                    <SelectItem value="EMOM">EMOM</SelectItem>
-                                                    <SelectItem value="Max Weight">Max Weight</SelectItem>
-                                                </SelectContent>
-                                            </Select><FormMessage /></FormItem>
-                                        )} />
-                                        <FormField control={wodMethods.control} name="description" render={({ field }) => (
-                                            <FormItem><FormLabel>Descripción y Movimientos</FormLabel><FormControl><Textarea placeholder="21-15-9 de...\nDeadlift (225/155 lbs)\nBurpees sobre la barra" {...field} rows={5} /></FormControl><FormMessage /></FormItem>
-                                        )} />
-                                        <DialogFooter className="pt-4">
-                                            <DialogClose asChild><Button type="button" variant="secondary">Cancelar</Button></DialogClose>
-                                            <Button type="submit">Crear WOD</Button>
-                                        </DialogFooter>
-                                    </form>
-                                </FormProvider>
-                            </DialogContent>
-                        </Dialog>
-                    </CardHeader>
-                    <CardContent>
-                       {(competition.workouts && competition.workouts.length > 0) ? (
-                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                               {competition.workouts.sort((a, b) => a.order - b.order).map((wod) => (
-                                   <Card key={wod.id} className="relative group bg-muted/50">
-                                        <CardHeader>
-                                            <CardTitle className="font-headline text-lg flex items-center justify-between">
-                                                <span>{wod.name}</span>
-                                                <Badge variant="outline" className="font-mono text-xs">{wod.type}</Badge>
-                                            </CardTitle>
-                                            <CardDescription>WOD #{wod.order}</CardDescription>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{wod.description}</p>
-                                        </CardContent>
-                                        <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <Button variant="ghost" size="icon" className="h-8 w-8"><Edit className="h-4 w-4" /></Button>
-                                            <AlertDialog>
-                                                <AlertDialogTrigger asChild>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive"><Trash2 className="h-4 w-4" /></Button>
-                                                </AlertDialogTrigger>
-                                                <AlertDialogContent>
-                                                    <AlertDialogHeader>
-                                                        <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-                                                        <AlertDialogDescription>
-                                                            Esta acción no se puede deshacer. Esto eliminará permanentemente el WOD "{wod.name}".
-                                                        </AlertDialogDescription>
-                                                    </AlertDialogHeader>
-                                                    <AlertDialogFooter>
-                                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                        <AlertDialogAction onClick={() => handleDelete(wod, 'wod')}>Eliminar</AlertDialogAction>
-                                                    </AlertDialogFooter>
-                                                </AlertDialogContent>
-                                            </AlertDialog>
-                                        </div>
-                                   </Card>
-                               ))}
-                           </div>
-                       ) : (
-                        <div className="text-center py-12 border-2 border-dashed rounded-lg">
-                            <Dumbbell className="mx-auto h-10 w-10 text-muted-foreground" />
-                            <h3 className="mt-4 text-xl font-semibold mb-2">Aún no hay WODs</h3>
-                            <p className="text-muted-foreground mb-4">Define los desafíos que tus atletas enfrentarán.</p>
-                        </div>
-                       )}
-                    </CardContent>
-                </Card>
+                            </CardHeader>
+                            <CardContent>
+                            {competition.categories && competition.categories.length > 0 ? (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {competition.categories.map((cat) => (
+                                        <Card key={cat.id} className="relative group">
+                                                <CardHeader>
+                                                    <CardTitle className="font-headline text-lg">{cat.name}</CardTitle>
+                                                    <div className="flex items-center gap-2 text-sm">
+                                                        <Badge variant="secondary">{cat.type}</Badge>
+                                                        <Badge variant="secondary">{cat.gender}</Badge>
+                                                    </div>
+                                                </CardHeader>
+                                                <CardContent className="space-y-2 text-sm">
+                                                    <div className="flex justify-between">
+                                                        <span className="text-muted-foreground">Precio:</span>
+                                                        <span className="font-semibold flex items-center"><DollarSign className="h-4 w-4 mr-1"/>{cat.price.toLocaleString('es-CO')}</span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-muted-foreground">Cupos:</span>
+                                                        <span className="font-semibold flex items-center"><Users className="h-4 w-4 mr-1"/>{cat.registeredCount} / {cat.spots}</span>
+                                                    </div>
+                                                </CardContent>
+                                                <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8"><Edit className="h-4 w-4" /></Button>
+                                                    <AlertDialog>
+                                                        <AlertDialogTrigger asChild>
+                                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive"><Trash2 className="h-4 w-4" /></Button>
+                                                        </AlertDialogTrigger>
+                                                        <AlertDialogContent>
+                                                            <AlertDialogHeader>
+                                                                <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                                                                <AlertDialogDescription>
+                                                                    Esta acción no se puede deshacer. Esto eliminará permanentemente la categoría "{cat.name}".
+                                                                </AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter>
+                                                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                                <AlertDialogAction onClick={() => handleDelete(cat, 'category')}>Eliminar</AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
+                                                </div>
+                                        </Card>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-12 border-2 border-dashed rounded-lg">
+                                    <h3 className="text-xl font-semibold mb-2">Aún no hay categorías</h3>
+                                    <p className="text-muted-foreground mb-4">Haz clic en "Añadir Categoría" para empezar a configurar tu evento.</p>
+                                </div>
+                            )}
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+                    
+                    <TabsContent value="wods">
+                        <Card>
+                            <CardHeader className="flex flex-row justify-between items-center">
+                                <div>
+                                    <CardTitle className="font-headline">WODs de la Competencia</CardTitle>
+                                    <CardDescription>Define los workouts que los atletas enfrentarán.</CardDescription>
+                                </div>
+                                <Dialog open={isWodDialogOpen} onOpenChange={setIsWodDialogOpen}>
+                                    <DialogTrigger asChild>
+                                        <Button>
+                                            <PlusCircle className="mr-2 h-4 w-4" />
+                                            Añadir WOD
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="sm:max-w-md">
+                                        <DialogHeader>
+                                            <DialogTitle className="font-headline">Nuevo WOD</DialogTitle>
+                                            <DialogDescription>Completa los detalles para el nuevo workout.</DialogDescription>
+                                        </DialogHeader>
+                                        <FormProvider {...wodMethods}>
+                                            <form onSubmit={wodMethods.handleSubmit(onWodSubmit)} className="space-y-4 py-4">
+                                                <FormField control={wodMethods.control} name="name" render={({ field }) => (
+                                                    <FormItem><FormLabel>Nombre del WOD</FormLabel><FormControl><Input placeholder="Ej: 'Chipper de la Muerte'" {...field} /></FormControl><FormMessage /></FormItem>
+                                                )} />
+                                                <FormField control={wodMethods.control} name="type" render={({ field }) => (
+                                                    <FormItem><FormLabel>Tipo de WOD</FormLabel>
+                                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                        <FormControl><SelectTrigger><SelectValue placeholder="Selecciona el tipo..." /></SelectTrigger></FormControl>
+                                                        <SelectContent>
+                                                            <SelectItem value="For Time">For Time</SelectItem>
+                                                            <SelectItem value="AMRAP">AMRAP</SelectItem>
+                                                            <SelectItem value="EMOM">EMOM</SelectItem>
+                                                            <SelectItem value="Max Weight">Max Weight</SelectItem>
+                                                        </SelectContent>
+                                                    </Select><FormMessage /></FormItem>
+                                                )} />
+                                                <FormField control={wodMethods.control} name="description" render={({ field }) => (
+                                                    <FormItem><FormLabel>Descripción y Movimientos</FormLabel><FormControl><Textarea placeholder="21-15-9 de...\nDeadlift (225/155 lbs)\nBurpees sobre la barra" {...field} rows={5} /></FormControl><FormMessage /></FormItem>
+                                                )} />
+                                                <DialogFooter className="pt-4">
+                                                    <DialogClose asChild><Button type="button" variant="secondary">Cancelar</Button></DialogClose>
+                                                    <Button type="submit">Crear WOD</Button>
+                                                </DialogFooter>
+                                            </form>
+                                        </FormProvider>
+                                    </DialogContent>
+                                </Dialog>
+                            </CardHeader>
+                            <CardContent>
+                            {(competition.workouts && competition.workouts.length > 0) ? (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {competition.workouts.sort((a, b) => a.order - b.order).map((wod) => (
+                                        <Card key={wod.id} className="relative group bg-muted/50">
+                                                <CardHeader>
+                                                    <CardTitle className="font-headline text-lg flex items-center justify-between">
+                                                        <span>{wod.name}</span>
+                                                        <Badge variant="outline" className="font-mono text-xs">{wod.type}</Badge>
+                                                    </CardTitle>
+                                                    <CardDescription>WOD #{wod.order}</CardDescription>
+                                                </CardHeader>
+                                                <CardContent>
+                                                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{wod.description}</p>
+                                                </CardContent>
+                                                <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8"><Edit className="h-4 w-4" /></Button>
+                                                    <AlertDialog>
+                                                        <AlertDialogTrigger asChild>
+                                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive"><Trash2 className="h-4 w-4" /></Button>
+                                                        </AlertDialogTrigger>
+                                                        <AlertDialogContent>
+                                                            <AlertDialogHeader>
+                                                                <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                                                                <AlertDialogDescription>
+                                                                    Esta acción no se puede deshacer. Esto eliminará permanentemente el WOD "{wod.name}".
+                                                                </AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter>
+                                                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                                <AlertDialogAction onClick={() => handleDelete(wod, 'wod')}>Eliminar</AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
+                                                </div>
+                                        </Card>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-12 border-2 border-dashed rounded-lg">
+                                    <Dumbbell className="mx-auto h-10 w-10 text-muted-foreground" />
+                                    <h3 className="mt-4 text-xl font-semibold mb-2">Aún no hay WODs</h3>
+                                    <p className="text-muted-foreground mb-4">Define los desafíos que tus atletas enfrentarán.</p>
+                                </div>
+                            )}
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
 
-                <RegistrationsDashboard competition={competition} />
+                    <TabsContent value="results">
+                        <ResultsDashboard competition={competition} />
+                    </TabsContent>
+                </Tabs>
              </div>
         </div>
     )
 }
+
+    

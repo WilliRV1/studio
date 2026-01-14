@@ -73,15 +73,33 @@ export type Registration = {
   registeredAt: Timestamp;
 };
 
-export type LeaderboardEntry = {
-  rank: number;
-  athleteName: string;
-  teamName?: string;
-  totalPoints: number;
-  scores: Record<string, {
-    score: string;
-    points: number;
-  }>;
+export type Score = {
+  id: string;
+  competitionId: string;
+  wodId: string;
+  athleteId: string;
+  result: number; // For simplicity, we'll use numbers (seconds for time, reps for amrap)
+  points: number;
+  submittedAt: Timestamp;
 };
 
+export type LeaderboardEntry = {
+  id: string; // Corresponds to athleteId
+  athleteId: string;
+  athleteName: string;
+  profilePictureUrl: string;
+  totalPoints: number;
+  rank: number;
+  scores: {
+    [wodId: string]: {
+      result: number;
+      points: number;
+      rank: number;
+    }
+  }
+};
+
+
 export type AIRequest = SuggestPartnersInput;
+
+    

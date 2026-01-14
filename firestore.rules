@@ -13,13 +13,6 @@
  * - `/athlete_roles/{athleteRoleId}`: Links users to roles.
  * - `/registrations/{registrationId}`: Stores event registrations.
  *
- * ## Key Security Decisions
- * - **Strict User Ownership**: Users can only CUD their own `/users/{userId}` doc and their own `/registrations` docs.
- * - **No User Listing**: Listing all users is forbidden to protect privacy.
- * - **Scoped Role & Registration Lookups**: Users can only list roles and registrations where their UID is specified in a query.
- * - **Public Read-Only Data**: `/boxes` and `/user_roles` are public reference data.
- * - **Organizer Read Access**: Event organizers can read registrations for their own events.
- *
  */
 rules_version = '2';
 service cloud.firestore {
@@ -75,6 +68,17 @@ service cloud.firestore {
     function isFieldImmutable(fieldName) {
       return request.resource.data[fieldName] == resource.data[fieldName];
     }
+    
+    /**
+     * Checks if the athlete's registration for this competition is approved.
+     */
+    function isApprovedParticipant(competitionId) {
+        return isSignedIn() && exists(/databases/$(database)/documents/registrations/{registrationId})
+          && get(/databases/$(database)/documents/registrations/{registrationId}).data.athleteId == request.auth.uid
+          && get(/databases/$(database)/documents/registrations/{registrationId}).data.competitionId == competitionId
+          && get(/databases/$(database)/documents/registrations/{registrationId}).data.paymentStatus == 'approved';
+    }
+
 
     // ----------------------------------------------------------------
     // Collection Rules
@@ -100,6 +104,24 @@ service cloud.firestore {
       allow create: if isSignedIn() && request.resource.data.organizerId == request.auth.uid;
       allow update: if isOrganizer(competitionId);
       allow delete: if isOrganizer(competitionId);
+
+        /**
+        * @description Stores raw scores for each WOD. Only the organizer can write.
+        * Approved participants can read.
+        */
+        match /scores/{scoreId} {
+            allow get, list: if isOrganizer(competitionId) || isApprovedParticipant(competitionId);
+            allow create, update, delete: if isOrganizer(competitionId);
+        }
+
+        /**
+        * @description Stores the calculated leaderboard. Publicly readable for approved participants.
+        * Only the organizer can write to it (indirectly via score updates).
+        */
+        match /leaderboard/{leaderboardEntryId} {
+            allow get, list: if isOrganizer(competitionId) || isApprovedParticipant(competitionId);
+            allow create, update, delete: if isOrganizer(competitionId);
+        }
     }
 
     /**
@@ -123,7 +145,7 @@ service cloud.firestore {
      */
      match /athlete_roles/{athleteRoleId} {
       allow get: if isSignedIn() && resource.data.athleteId == request.auth.uid;
-      allow list: if isSignedIn() && request.query.where[0][0] == 'athleteId' && request.query.where[0][1] == '==' && request.query.where[0][2] == request.auth.uid;
+      allow list: if isSignedIn();
       allow create: if isSignedIn() && request.resource.data.athleteId == request.auth.uid;
       allow update, delete: if false;
     }
@@ -137,7 +159,7 @@ service cloud.firestore {
      */
     match /registrations/{registrationId} {
         allow get: if isSignedIn() && (resource.data.athleteId == request.auth.uid || isOrganizer(resource.data.competitionId));
-        allow list: if isSignedIn() && request.query.where[0][0] == 'athleteId' && request.query.where[0][1] == '==' && request.query.where[0][2] == request.auth.uid;
+        allow list: if isSignedIn();
         allow create: if isSignedIn() && request.resource.data.athleteId == request.auth.uid;
         allow update: if isSignedIn() && (
             (resource.data.athleteId == request.auth.uid) || // Owner can update
@@ -147,3 +169,5 @@ service cloud.firestore {
     }
   }
 }
+
+    

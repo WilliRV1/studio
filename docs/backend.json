@@ -251,6 +251,47 @@
         }
       },
       "required": ["id", "name", "description", "type", "order"]
+    },
+    "Score": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Score",
+      "type": "object",
+      "description": "Represents an athlete's raw result for a specific WOD.",
+      "properties": {
+        "id": { "type": "string" },
+        "competitionId": { "type": "string" },
+        "wodId": { "type": "string" },
+        "athleteId": { "type": "string" },
+        "result": { "type": ["string", "number"] },
+        "points": { "type": "number" },
+        "submittedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "competitionId", "wodId", "athleteId", "result"]
+    },
+    "LeaderboardEntry": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "LeaderboardEntry",
+        "type": "object",
+        "description": "Represents an athlete's entry in the overall leaderboard for a category.",
+        "properties": {
+            "athleteId": { "type": "string" },
+            "athleteName": { "type": "string" },
+            "profilePictureUrl": { "type": "string" },
+            "totalPoints": { "type": "number" },
+            "rank": { "type": "number" },
+            "scores": {
+                "type": "object",
+                "additionalProperties": {
+                    "type": "object",
+                    "properties": {
+                        "result": { "type": ["string", "number"] },
+                        "points": { "type": "number" },
+                        "rank": { "type": "number" }
+                    }
+                }
+            }
+        },
+        "required": ["athleteId", "athleteName", "totalPoints", "rank"]
     }
   },
   "auth": {
@@ -340,8 +381,34 @@
             }
           ]
         }
+      },
+      {
+        "path": "/competitions/{competitionId}/scores/{scoreId}",
+        "definition": {
+            "entityName": "Score",
+            "schema": { "$ref": "#/backend/entities/Score" },
+            "description": "Stores the raw score for each athlete for each WOD in a competition.",
+            "params": [
+                { "name": "competitionId" },
+                { "name": "scoreId" }
+            ]
+        }
+      },
+      {
+          "path": "/competitions/{competitionId}/leaderboard/{leaderboardEntryId}",
+          "definition": {
+              "entityName": "LeaderboardEntry",
+              "schema": { "$ref": "#/backend/entities/LeaderboardEntry" },
+              "description": "Stores the calculated leaderboard for a category within a competition.",
+              "params": [
+                  { "name": "competitionId" },
+                  { "name": "leaderboardEntryId" }
+              ]
+          }
       }
     ],
     "reasoning": "This Firestore structure prioritizes authorization independence and QAPs. User profiles and related data are stored under the `/users/{userId}` path, ensuring clear ownership. The `Athlete` entity includes all necessary information for the athlete profile. The `Box` entity contains details about CrossFit boxes. Roles are managed through the `athlete_roles` collection, associating athletes with roles (Athlete, Organizer, Administrator). This denormalized approach removes the need for complex `get()` calls in security rules. By storing all athlete data, box affiliation and social information in the athlete profile, access can be managed efficiently, and rules are simplified.\n\nQAPs are addressed by storing each entity in its dedicated collection with uniform security posture, ensuring secure `list` operations. Authorization Independence is ensured by denormalizing data. For example the `boxAffiliationId` attribute is stored directly within the `/users/{userId}/athlete/{athleteId}` document. In a collaborative scenario, such as events or teams, denormalizing the membership map into each document would provide the authorization context needed for rules and atomic batch operations."
   }
 }
+
+    
