@@ -74,7 +74,7 @@ export function RegistrationManagementDialog({ registration, competition, catego
         const storage = getStorage();
         const storageRef = ref(storage, `payment-proofs/${registration.competitionId}/${registration.athleteId}/${paymentProofFile.name}`);
         
-        const snapshot = await uploadBytes(storageRef, file);
+        const snapshot = await uploadBytes(storageRef, paymentProofFile);
         const downloadURL = await getDownloadURL(snapshot.ref);
 
         const registrationRef = doc(firestore, 'registrations', registration.id);
@@ -124,9 +124,10 @@ export function RegistrationManagementDialog({ registration, competition, catego
                 </div>
             </div>
 
-             {registration.rejectionReason && (
+             {registration.paymentStatus === 'rejected' && registration.rejectionReason && (
                  <div className="p-3 bg-destructive/10 border border-destructive/50 rounded-lg">
-                    <p className="text-sm text-destructive-foreground"><span className="font-bold">Motivo del rechazo:</span> {registration.rejectionReason}</p>
+                    <p className="text-sm text-destructive font-bold">Motivo del rechazo:</p>
+                    <p className="text-sm text-foreground/80">{registration.rejectionReason}</p>
                  </div>
             )}
             
