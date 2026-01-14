@@ -1,7 +1,6 @@
 'use client';
 
-import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
-import { useDoc } from '@/firebase';
+import { useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { doc } from 'firebase/firestore';
 
 import type { Athlete, Registration } from '@/lib/types';
@@ -83,7 +82,7 @@ export default function DashboardPage() {
   const firestore = useFirestore();
 
   const userDocRef = useMemoFirebase(() => {
-    if (!user) return null;
+    if (!firestore || !user) return null;
     return doc(firestore, 'users', user.uid);
   }, [firestore, user]);
   
