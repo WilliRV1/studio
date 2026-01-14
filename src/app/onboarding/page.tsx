@@ -103,56 +103,55 @@ export default function OnboardingPage() {
     
     let profilePictureUrl = user.photoURL || `https://picsum.photos/seed/${user.uid}/200/200`;
 
-    // Handle File Upload
-    if (data.profilePicture && data.profilePicture.length > 0) {
-        const file = data.profilePicture[0];
-        const storage = getStorage();
-        const storageRef = ref(storage, `profile-pictures/${user.uid}/${file.name}`);
-        
-        try {
-            const snapshot = await uploadBytes(storageRef, file);
-            profilePictureUrl = await getDownloadURL(snapshot.ref);
-        } catch (error) {
-            console.error("Error uploading profile picture:", error);
-            toast({
-                variant: "destructive",
-                title: "Error al subir imagen",
-                description: "No se pudo subir tu foto de perfil. Por favor, inténtalo de nuevo.",
-            });
-            setIsSubmitting(false);
-            return;
-        }
+    try {
+      // Handle File Upload
+      if (data.profilePicture && data.profilePicture.length > 0) {
+          const file = data.profilePicture[0];
+          const storage = getStorage();
+          const storageRef = ref(storage, `profile-pictures/${user.uid}/${file.name}`);
+          
+          const snapshot = await uploadBytes(storageRef, file);
+          profilePictureUrl = await getDownloadURL(snapshot.ref);
+      }
+
+      const userProfileRef = doc(firestore, 'users', user.uid);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { profilePicture, ...profileData } = data; // Exclude profilePicture from Firestore data
+      
+      const finalProfileData = {
+          ...profileData,
+          id: user.uid,
+          email: user.email,
+          profilePictureUrl,
+      };
+
+      setDocumentNonBlocking(userProfileRef, finalProfileData, { merge: true });
+
+      // Assign default "Athlete" role
+      const athleteRoleRef = collection(firestore, 'athlete_roles');
+      addDocumentNonBlocking(athleteRoleRef, {
+        athleteId: user.uid,
+        roleId: 'role-athlete' // Hardcoded ID for 'Athlete' role
+      });
+
+
+      toast({
+          title: '¡Perfil completado!',
+          description: 'Bienvenido a WodMatch. Tu perfil ha sido guardado.',
+      });
+      
+      router.push('/dashboard');
+
+    } catch (error) {
+        console.error("Error submitting onboarding form:", error);
+        toast({
+            variant: "destructive",
+            title: "Error al guardar perfil",
+            description: "Ocurrió un error inesperado. Por favor, inténtalo de nuevo.",
+        });
+    } finally {
+      setIsSubmitting(false);
     }
-
-    const userProfileRef = doc(firestore, 'users', user.uid);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { profilePicture, ...profileData } = data; // Exclude profilePicture from Firestore data
-    
-    const finalProfileData = {
-        ...profileData,
-        id: user.uid,
-        email: user.email,
-        profilePictureUrl,
-    };
-
-    setDocumentNonBlocking(userProfileRef, finalProfileData, { merge: true });
-
-    // Assign default "Athlete" role
-    const athleteRoleRef = collection(firestore, 'athlete_roles');
-    addDocumentNonBlocking(athleteRoleRef, {
-      athleteId: user.uid,
-      roleId: 'role-athlete' // Hardcoded ID for 'Athlete' role
-    });
-
-
-    toast({
-        title: '¡Perfil completado!',
-        description: 'Bienvenido a WodMatch. Tu perfil ha sido guardado.',
-    });
-    
-    setTimeout(() => {
-        router.push('/dashboard');
-    }, 1000);
   };
   
   const progressValue = ((currentStep + 1) / steps.length) * 100;
