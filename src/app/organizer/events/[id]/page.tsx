@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useDoc, useFirestore, useMemoFirebase, useUser } from "@/firebase";
-import { doc, updateDoc, arrayUnion } from "firebase/firestore";
+import { doc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
 import type { Competition, Category, Workout } from "@/lib/types";
 import { z } from "zod";
 import { useForm, FormProvider } from "react-hook-form";
@@ -27,6 +27,17 @@ import {
   DialogClose,
   DialogFooter
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { useState } from "react";
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -170,6 +181,22 @@ export default function EventManagementPage() {
             toast({ variant: 'destructive', title: "Error", description: "No se pudo añadir el WOD." });
         }
     }
+    
+    const handleDelete = async (item: Category | Workout, itemType: 'category' | 'wod') => {
+        if (!competitionRef) return;
+
+        const fieldToUpdate = itemType === 'category' ? 'categories' : 'workouts';
+        
+        try {
+             await updateDoc(competitionRef, {
+                [fieldToUpdate]: arrayRemove(item)
+            });
+            toast({ title: `${itemType === 'category' ? 'Categoría' : 'WOD'} eliminada`, description: `"${item.name}" fue eliminada correctamente.` });
+        } catch (e) {
+            console.error(e);
+            toast({ variant: 'destructive', title: "Error", description: "No se pudo eliminar el elemento." });
+        }
+    }
 
 
     if (isLoading) {
@@ -293,7 +320,23 @@ export default function EventManagementPage() {
                                         </CardContent>
                                         <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                             <Button variant="ghost" size="icon" className="h-8 w-8"><Edit className="h-4 w-4" /></Button>
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive"><Trash2 className="h-4 w-4" /></Button>
+                                            <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive"><Trash2 className="h-4 w-4" /></Button>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                        <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                                                        <AlertDialogDescription>
+                                                            Esta acción no se puede deshacer. Esto eliminará permanentemente la categoría "{cat.name}".
+                                                        </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                        <AlertDialogAction onClick={() => handleDelete(cat, 'category')}>Eliminar</AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
                                         </div>
                                    </Card>
                                ))}
@@ -372,7 +415,23 @@ export default function EventManagementPage() {
                                         </CardContent>
                                         <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                             <Button variant="ghost" size="icon" className="h-8 w-8"><Edit className="h-4 w-4" /></Button>
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive"><Trash2 className="h-4 w-4" /></Button>
+                                            <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive"><Trash2 className="h-4 w-4" /></Button>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                        <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                                                        <AlertDialogDescription>
+                                                            Esta acción no se puede deshacer. Esto eliminará permanentemente el WOD "{wod.name}".
+                                                        </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                        <AlertDialogAction onClick={() => handleDelete(wod, 'wod')}>Eliminar</AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
                                         </div>
                                    </Card>
                                ))}
