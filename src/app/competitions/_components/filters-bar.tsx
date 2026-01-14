@@ -1,11 +1,10 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
 import { colombiaData } from '@/lib/colombia-data';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -32,7 +31,7 @@ export function FiltersBar({ filters, setFilters }: FiltersBarProps) {
   const isMobile = useIsMobile();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
-  const { control, watch, setValue, reset } = useForm<FiltersState>({
+  const { control, watch, setValue, reset, getValues } = useForm<FiltersState>({
     defaultValues: filters,
   });
 
@@ -43,9 +42,10 @@ export function FiltersBar({ filters, setFilters }: FiltersBarProps) {
   const updateUrlParams = useCallback(
     debounce((newFilters: FiltersState) => {
         const params = new URLSearchParams();
-        Object.entries(newFilters).forEach(([key, value]) => {
-            if (value && value !== 'all') {
-            params.set(key, value);
+        (Object.keys(newFilters) as (keyof FiltersState)[]).forEach((key) => {
+            const value = newFilters[key];
+            if (value && value !== 'all' && (key !== 'sortBy' || value !== 'date-asc')) {
+                params.set(key, String(value));
             }
         });
         router.replace(`${pathname}?${params.toString()}`);
@@ -63,7 +63,7 @@ export function FiltersBar({ filters, setFilters }: FiltersBarProps) {
   }, [watch, setFilters, updateUrlParams]);
 
   const handleClearFilters = () => {
-    const defaultFilters = {
+    const defaultFilters: FiltersState = {
         search: '',
         department: '',
         city: '',
@@ -71,14 +71,19 @@ export function FiltersBar({ filters, setFilters }: FiltersBarProps) {
         sortBy: 'date-asc',
     };
     reset(defaultFilters);
-    setFilters(defaultFilters);
-    router.replace(pathname);
+    // setFilters is called via the watch effect
   };
 
-  const hasActiveFilters = filters.department || filters.city || filters.dateRange !== 'all' || filters.sortBy !== 'date-asc';
+  const hasActiveFilters = Object.values(getValues()).some((value, index) => {
+      const key = Object.keys(getValues())[index];
+      if (key === 'sortBy') return value !== 'date-asc';
+      if (key === 'dateRange') return value !== 'all';
+      return !!value;
+  });
+
 
   const filterFields = (
-    <div className="grid grid-cols-1 gap-4 p-4 md:p-0 md:grid-cols-2 lg:grid-cols-5 md:gap-2 lg:gap-4">
+    <div className="grid grid-cols-1 gap-4 p-4 md:p-0 md:grid-cols-2 lg:grid-cols-6 md:gap-2 lg:gap-4 items-center">
       {/* Search */}
       <div className="relative lg:col-span-2">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -103,7 +108,7 @@ export function FiltersBar({ filters, setFilters }: FiltersBarProps) {
           <Select onValueChange={(val) => {
             field.onChange(val);
             setValue('city', '');
-          }} value={field.value}>
+          }} value={field.value || ''}>
             <SelectTrigger className="h-12 text-base"><SelectValue placeholder="Departamento" /></SelectTrigger>
             <SelectContent>
               {colombiaData.map(d => (<SelectItem key={d.id} value={d.departamento}>{d.departamento}</SelectItem>))}
@@ -117,10 +122,26 @@ export function FiltersBar({ filters, setFilters }: FiltersBarProps) {
         name="city"
         control={control}
         render={({ field }) => (
-          <Select onValueChange={field.onChange} value={field.value} disabled={!selectedDepartment}>
+          <Select onValueChange={field.onChange} value={field.value || ''} disabled={!selectedDepartment}>
             <SelectTrigger className="h-12 text-base"><SelectValue placeholder="Ciudad" /></SelectTrigger>
             <SelectContent>
               {cities.map(c => (<SelectItem key={c} value={c}>{c}</SelectItem>))}
+            </SelectContent>
+          </Select>
+        )}
+      />
+
+       {/* Date Range */}
+      <Controller
+        name="dateRange"
+        control={control}
+        render={({ field }) => (
+          <Select onValueChange={field.onChange} value={field.value}>
+            <SelectTrigger className="h-12 text-base"><SelectValue placeholder="Rango de Fechas" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas las fechas</SelectItem>
+              <SelectItem value="week">Próximos 7 días</SelectItem>
+              <SelectItem value="month">Próximos 30 días</SelectItem>
             </SelectContent>
           </Select>
         )}
@@ -155,16 +176,24 @@ export function FiltersBar({ filters, setFilters }: FiltersBarProps) {
     return (
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
         <SheetTrigger asChild>
-          <Button variant="outline" className="w-full justify-between h-12 text-base">
+          <Button variant="outline" className="w-full justify-between h-12 text-base relative">
             <span>Filtros</span>
+            {hasActiveFilters && <span className="absolute right-12 top-1/2 -translate-y-1/2 h-2 w-2 rounded-full bg-primary" />}
             <SlidersHorizontal className="h-5 w-5" />
           </Button>
         </SheetTrigger>
-        <SheetContent side="bottom" className="rounded-t-lg">
+        <SheetContent side="bottom" className="rounded-t-lg h-[80%]">
           <SheetHeader className="mb-4">
             <SheetTitle>Filtros</SheetTitle>
           </SheetHeader>
-          {filterFields}
+          <div className="flex flex-col h-full">
+            <div className="flex-grow overflow-y-auto">
+              {filterFields}
+            </div>
+            <div className="p-4 border-t">
+               <Button onClick={() => setIsSheetOpen(false)} className="w-full">Ver Resultados</Button>
+            </div>
+          </div>
         </SheetContent>
       </Sheet>
     );
@@ -182,14 +211,4 @@ export function FiltersBar({ filters, setFilters }: FiltersBarProps) {
         )}
      </div>
   );
-}
-
-// Debounce utility to prevent excessive re-renders
-function debounce<F extends (...args: any[]) => any>(func: F, wait: number): (...args: Parameters<F>) => void {
-  let timeout: NodeJS.Timeout | null = null;
-  return function(this: ThisParameterType<F>, ...args: Parameters<F>) {
-    const context = this;
-    if (timeout) clearTimeout(timeout);
-    timeout = setTimeout(() => func.apply(context, args), wait);
-  };
 }

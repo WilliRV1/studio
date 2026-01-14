@@ -24,7 +24,7 @@ export function CompetitionCard({ competition, className }: CompetitionCardProps
 
 
   return (
-    <Link href={linkHref} className="group block">
+    <Link href={linkHref} className="group block h-full">
       <Card className={cn("overflow-hidden h-full flex flex-col transition-all duration-300 hover:border-primary/80 hover:shadow-lg hover:shadow-primary/10", className)}>
         <CardHeader className="p-0">
           <div className="relative h-48 w-full">
@@ -57,7 +57,7 @@ export function CompetitionCard({ competition, className }: CompetitionCardProps
             </div>
           </div>
         </CardContent>
-        <CardFooter>
+        <CardFooter className="mt-auto">
             <p className="text-xs text-primary font-semibold">{isOrganizer ? 'Gestionar Evento' : 'Ver Detalles'} &rarr;</p>
         </CardFooter>
       </Card>
