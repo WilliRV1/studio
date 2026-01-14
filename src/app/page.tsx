@@ -6,26 +6,14 @@ import { ArrowRight, Trophy } from "lucide-react";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection, limit, orderBy, query } from "firebase/firestore";
 import type { Competition } from "@/lib/types";
-import { Skeleton } from "@/components/ui/skeleton";
+import { CompetitionCardSkeleton } from "@/components/skeletons";
 
 function FeaturedSkeleton() {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="rounded-lg border bg-card text-card-foreground shadow-sm">
-                    <div className="p-0">
-                        <Skeleton className="h-48 w-full rounded-t-lg" />
-                    </div>
-                    <div className="flex-1 pt-6 p-6 space-y-3">
-                        <Skeleton className="h-6 w-3/4" />
-                        <Skeleton className="h-4 w-1/2" />
-                        <Skeleton className="h-4 w-1/2" />
-                    </div>
-                    <div className="mt-auto p-6 pt-0">
-                       <Skeleton className="h-5 w-24" />
-                    </div>
-                </div>
-            ))}
+            <CompetitionCardSkeleton />
+            <CompetitionCardSkeleton />
+            <CompetitionCardSkeleton />
       </div>
     )
 }

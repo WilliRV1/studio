@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { getFriendlyAuthErrorMessage } from '@/lib/auth-errors';
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="24px" height="24px" {...props}>
@@ -37,13 +38,13 @@ export default function SignUpPage() {
             // Onboarding flow will be handled by a listener or redirect in a real app
             toast({
                 title: '¡Registro exitoso!',
-                description: 'Revisa tu correo para verificar tu cuenta.',
+                description: 'Serás redirigido para completar tu perfil.',
             });
         } catch (error: any) {
             toast({
                 variant: 'destructive',
                 title: 'Error en el registro',
-                description: error.message,
+                description: getFriendlyAuthErrorMessage(error.code),
             });
         } finally {
             setIsLoading(false);
@@ -62,7 +63,7 @@ export default function SignUpPage() {
             toast({
                 variant: 'destructive',
                 title: 'Error con Google',
-                description: error.message,
+                description: getFriendlyAuthErrorMessage(error.code),
             });
         } finally {
             setGoogleLoading(false);

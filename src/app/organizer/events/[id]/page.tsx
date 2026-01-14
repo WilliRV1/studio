@@ -9,6 +9,7 @@ import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { v4 as uuidv4 } from 'uuid';
 import * as XLSX from 'xlsx';
+import Link from 'next/link';
 
 
 import { Skeleton } from "@/components/ui/skeleton";
@@ -50,6 +51,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ResultsDashboard } from "./_components/results-dashboard";
 import { CategoryDistributionChart } from "./_components/category-distribution-chart";
 import { getStatusText } from "./_components/registration-row";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 
 
 const categorySchema = z.object({
@@ -301,6 +303,21 @@ export default function EventManagementPage() {
 
     return (
         <div className="bg-muted/40 min-h-screen">
+             <div className="container mx-auto px-4 py-6">
+                <Breadcrumb>
+                <BreadcrumbList>
+                    <BreadcrumbItem>
+                    <BreadcrumbLink asChild>
+                        <Link href="/organizer">Organizador</Link>
+                    </BreadcrumbLink>
+                    </BreadcrumbItem>
+                    <BreadcrumbSeparator />
+                    <BreadcrumbItem>
+                    <BreadcrumbPage>{competition.name}</BreadcrumbPage>
+                    </BreadcrumbItem>
+                </BreadcrumbList>
+                </Breadcrumb>
+            </div>
             <div className="relative h-48 md:h-64 w-full">
                 <Image
                     src={competition.bannerUrl}

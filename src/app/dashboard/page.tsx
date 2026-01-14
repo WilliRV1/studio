@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Edit, Instagram, Mail, Phone, MapPin, PlusCircle, Trophy, Briefcase, Trash2 } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
+import { DashboardSkeleton } from '@/components/skeletons';
 import Link from 'next/link';
 import { RegistrationManagementDialog } from '@/components/registration-management-dialog';
 import { PrManagementDialog } from '@/components/pr-management-dialog';
@@ -54,55 +54,6 @@ const getStatusText = (status: Registration['paymentStatus']) => {
         default: return 'Desconocido';
     }
 }
-
-function ProfileSkeleton() {
-    return (
-        <div className="grid gap-8 lg:grid-cols-3">
-            <div className="lg:col-span-1">
-                <Card>
-                    <CardHeader className="text-center items-center">
-                        <Skeleton className="h-24 w-24 rounded-full mb-4" />
-                        <Skeleton className="h-8 w-40 mb-2" />
-                        <Skeleton className="h-6 w-20" />
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="flex items-center gap-3">
-                            <Skeleton className="h-4 w-4" />
-                            <Skeleton className="h-4 w-48" />
-                        </div>
-                         <div className="flex items-center gap-3">
-                            <Skeleton className="h-4 w-4" />
-                            <Skeleton className="h-4 w-32" />
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <Skeleton className="h-4 w-4" />
-                            <Skeleton className="h-4 w-40" />
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <Skeleton className="h-4 w-4" />
-                            <Skeleton className="h-4 w-36" />
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
-            <div className="lg:col-span-2 space-y-8">
-                 <Card>
-                    <CardHeader>
-                        <CardTitle className="font-headline">Mis Competiciones</CardTitle>
-                        <CardDescription>Gestiona tus inscripciones y pagos.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                         <div className="text-center py-10 border-2 border-dashed rounded-lg">
-                            <Skeleton className="h-5 w-64 mx-auto mb-4" />
-                            <Skeleton className="h-10 w-48 mx-auto" />
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
-        </div>
-    )
-}
-
 
 export default function DashboardPage() {
   const { user, isUserLoading } = useUser();
@@ -212,7 +163,7 @@ export default function DashboardPage() {
   if (isUserLoading || isAthleteLoading || areRegistrationsLoading) {
     return (
        <div className="container mx-auto py-8 md:py-12">
-            <ProfileSkeleton />
+            <DashboardSkeleton />
        </div>
     );
   }
@@ -392,7 +343,7 @@ export default function DashboardPage() {
                     );
                   })
                 ) : (
-                  <div className="text-center py-10 border-2 border-dashed rounded-lg">
+                  <div className="text-center py-10 border-2 border-dashed rounded-lg bg-muted/20">
                     <p className="text-muted-foreground mb-4">Aún no te has inscrito en ninguna competición.</p>
                     <Button asChild>
                       <Link href="/competitions">Buscar una Competición</Link>

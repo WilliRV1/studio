@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { getFriendlyAuthErrorMessage } from '@/lib/auth-errors';
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="24px" height="24px" {...props}>
@@ -41,7 +42,7 @@ export default function LoginPage() {
             toast({
                 variant: 'destructive',
                 title: 'Error al iniciar sesión',
-                description: 'El correo electrónico o la contraseña son incorrectos.',
+                description: getFriendlyAuthErrorMessage(error.code),
             });
         } finally {
             setIsLoading(false);
@@ -60,7 +61,7 @@ export default function LoginPage() {
             toast({
                 variant: 'destructive',
                 title: 'Error con Google',
-                description: error.message,
+                description: getFriendlyAuthErrorMessage(error.code),
             });
         } finally {
             setGoogleLoading(false);

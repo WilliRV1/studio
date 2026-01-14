@@ -9,22 +9,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlusCircle } from "lucide-react";
 import Link from "next/link";
-import { Skeleton } from "@/components/ui/skeleton";
+import { CompetitionCardSkeleton } from "@/components/skeletons";
 import { CompetitionCard } from "@/components/competition-card";
 
 function OrganizerSkeleton() {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {Array.from({ length: 2 }).map((_, i) => (
-                 <div key={i} className="space-y-4">
-                    <Skeleton className="h-48 w-full" />
-                    <div className="space-y-2 p-2">
-                        <Skeleton className="h-6 w-3/4" />
-                        <Skeleton className="h-4 w-1/2" />
-                        <Skeleton className="h-4 w-1/2" />
-                    </div>
-                </div>
-            ))}
+            <CompetitionCardSkeleton />
+            <CompetitionCardSkeleton />
         </div>
     )
 }
@@ -51,7 +43,7 @@ export default function OrganizerPage() {
                 Crea, gestiona y ejecuta tus competencias de CrossFit con facilidad.
                 </p>
             </div>
-            <Button asChild size="lg">
+            <Button asChild size="lg" className="hidden sm:flex">
                 <Link href="/organizer/create-event">
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Crear Nuevo Evento

@@ -16,6 +16,8 @@ import PartnerFinderClient from "./_components/partner-finder-client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RegistrationDialog } from "./_components/registration-dialog";
 import LeaderboardClient from "./_components/leaderboard-client";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 
 function DetailPageSkeleton() {
@@ -91,7 +93,23 @@ export default function CompetitionDetailPage({ params }: { params: { id: string
 
   return (
     <div className="bg-background">
-      <section className="relative h-64 md:h-80 w-full">
+       <div className="container mx-auto px-4 pt-6">
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link href="/competitions">Competencias</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>{competition.name}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+      </div>
+
+      <section className="relative h-64 md:h-80 w-full mt-6">
         <Image
           src={competition.bannerUrl}
           alt={`${competition.name} banner`}
@@ -120,12 +138,15 @@ export default function CompetitionDetailPage({ params }: { params: { id: string
 
       <div className="container mx-auto px-4 py-8 md:py-12">
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 h-auto md:h-10 mb-8">
-            <TabsTrigger value="overview"><Users className="h-4 w-4 mr-2 hidden md:inline"/>Información</TabsTrigger>
-            <TabsTrigger value="categories"><Trophy className="h-4 w-4 mr-2 hidden md:inline"/>Categorías</TabsTrigger>
-            <TabsTrigger value="partner-finder" disabled={!partnerFinderCategory}><Search className="h-4 w-4 mr-2 hidden md:inline"/>Buscar Pareja</TabsTrigger>
-            <TabsTrigger value="leaderboard" disabled={!isPaymentApproved && !!user}><BarChart2 className="h-4 w-4 mr-2 hidden md:inline"/>Leaderboard</TabsTrigger>
-          </TabsList>
+          <ScrollArea className="w-full whitespace-nowrap">
+            <TabsList className="grid w-full grid-cols-4 md:grid-cols-4 h-auto md:h-10 mb-8 min-w-max">
+              <TabsTrigger value="overview"><Users className="h-4 w-4 mr-2 hidden md:inline"/>Información</TabsTrigger>
+              <TabsTrigger value="categories"><Trophy className="h-4 w-4 mr-2 hidden md:inline"/>Categorías</TabsTrigger>
+              <TabsTrigger value="partner-finder" disabled={!partnerFinderCategory}><Search className="h-4 w-4 mr-2 hidden md:inline"/>Buscar Pareja</TabsTrigger>
+              <TabsTrigger value="leaderboard" disabled={!isPaymentApproved && !!user}><BarChart2 className="h-4 w-4 mr-2 hidden md:inline"/>Leaderboard</TabsTrigger>
+            </TabsList>
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
           
           <TabsContent value="overview">
              <Card>
