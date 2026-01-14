@@ -4,7 +4,7 @@ import type { Registration, Athlete, Category } from "@/lib/types";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { ReviewRegistrationDialog } from "./review-registration-dialog";
 
 interface RegistrationRowProps {
     registration: Registration;
@@ -74,9 +74,7 @@ export function RegistrationRow({ registration, athlete, category }: Registratio
                 </Badge>
             </TableCell>
             <TableCell className="text-right">
-                <Button variant="outline" size="sm">
-                   Revisar
-                </Button>
+                <ReviewRegistrationDialog registration={registration} athlete={athlete} />
             </TableCell>
         </TableRow>
     )

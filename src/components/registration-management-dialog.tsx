@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { z } from 'zod';
 import {
   Dialog,
   DialogContent,
@@ -15,12 +14,12 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Upload, CheckCircle, AlertCircle, Clock } from 'lucide-react';
+import { Loader2, Upload, CheckCircle, AlertCircle, Clock, ExternalLink } from 'lucide-react';
 import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import type { Registration, Competition, Category } from '@/lib/types';
-import { Badge } from './ui/badge';
+import Link from 'next/link';
 
 interface RegistrationManagementDialogProps {
   registration: Registration;
@@ -75,7 +74,7 @@ export function RegistrationManagementDialog({ registration, competition, catego
         const storage = getStorage();
         const storageRef = ref(storage, `payment-proofs/${registration.competitionId}/${registration.athleteId}/${paymentProofFile.name}`);
         
-        const snapshot = await uploadBytes(storageRef, paymentProofFile);
+        const snapshot = await uploadBytes(storageRef, file);
         const downloadURL = await getDownloadURL(snapshot.ref);
 
         const registrationRef = doc(firestore, 'registrations', registration.id);
@@ -83,6 +82,7 @@ export function RegistrationManagementDialog({ registration, competition, catego
         updateDocumentNonBlocking(registrationRef, {
             paymentProofUrl: downloadURL,
             paymentStatus: 'pending_approval',
+            rejectionReason: '', // Clear previous rejection reason if any
         });
         
         toast({
@@ -91,6 +91,8 @@ export function RegistrationManagementDialog({ registration, competition, catego
         });
         
         setIsOpen(false);
+        setPaymentProofFile(null);
+
 
     } catch (error) {
         console.error("Error uploading payment proof:", error);
@@ -126,6 +128,17 @@ export function RegistrationManagementDialog({ registration, competition, catego
                  <div className="p-3 bg-destructive/10 border border-destructive/50 rounded-lg">
                     <p className="text-sm text-destructive-foreground"><span className="font-bold">Motivo del rechazo:</span> {registration.rejectionReason}</p>
                  </div>
+            )}
+            
+             {registration.paymentStatus === 'pending_approval' && registration.paymentProofUrl && (
+                <div className="space-y-2">
+                    <h4 className="font-medium">Comprobante Enviado</h4>
+                    <Button variant="outline" asChild>
+                        <Link href={registration.paymentProofUrl} target="_blank" rel="noopener noreferrer">
+                           Ver Comprobante <ExternalLink className="ml-2 h-4 w-4" />
+                        </Link>
+                    </Button>
+                </div>
             )}
 
             {category && (
