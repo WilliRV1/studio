@@ -53,9 +53,29 @@ export function RegistrationManagementDialog({ registration, competition, catego
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      setPaymentProofFile(file);
+    if (!file) {
+      setPaymentProofFile(null);
+      return;
+    };
+
+     // Validar tamaño (máx 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+        toast({ variant: 'destructive', title: 'Archivo muy grande', 
+                description: 'El tamaño máximo del comprobante es 5MB' });
+        event.target.value = ''; // Clear the input
+        setPaymentProofFile(null);
+        return;
     }
+    
+    // Validar formato
+    if (!['image/jpeg', 'image/png', 'application/pdf'].includes(file.type)) {
+        toast({ variant: 'destructive', title: 'Formato inválido', description: "Solo se aceptan archivos JPG, PNG o PDF." });
+        event.target.value = '';
+        setPaymentProofFile(null);
+        return;
+    }
+
+    setPaymentProofFile(file);
   };
 
   const handleUploadProof = async () => {
@@ -154,7 +174,7 @@ export function RegistrationManagementDialog({ registration, competition, catego
              {(registration.paymentStatus === 'pending_payment' || registration.paymentStatus === 'rejected') && (
                  <div className="space-y-3">
                     <label htmlFor="payment-proof" className="font-medium">Sube tu comprobante</label>
-                    <Input id="payment-proof" type="file" onChange={handleFileChange} accept="image/png, image/jpeg, image/jpg, application/pdf" />
+                    <Input id="payment-proof" type="file" onChange={handleFileChange} accept="image/png, image/jpeg, application/pdf" />
                      <Button onClick={handleUploadProof} disabled={isSubmitting || !paymentProofFile} className="w-full">
                         {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
                         Enviar Comprobante
