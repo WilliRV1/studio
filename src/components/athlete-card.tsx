@@ -1,3 +1,4 @@
+
 import Image from "next/image";
 import type { Athlete } from "@/lib/types";
 import type { SuggestPartnersOutput } from "@/ai/flows/partner-finder-suggest-partners";
@@ -18,23 +19,28 @@ type AthleteCardProps = {
 };
 
 export function AthleteCard({ athlete, suggestion }: AthleteCardProps) {
+  // TODO: Get skill level from athlete profile when available
+  const skillLevel = 'Intermediate'; 
+  
   return (
     <Card className="flex flex-col text-left">
       <CardHeader className="flex-row gap-4 items-start pb-4">
         <div className="relative h-16 w-16 shrink-0">
           <Image
-            src={athlete.avatarUrl}
-            alt={athlete.name}
+            src={athlete.profilePictureUrl}
+            alt={`${athlete.firstName} ${athlete.lastName}`}
             fill
             className="rounded-full object-cover border-2 border-primary"
             data-ai-hint="athlete portrait"
           />
         </div>
         <div>
-          <CardTitle className="font-headline text-lg mb-1">{athlete.name}</CardTitle>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="font-mono uppercase">{athlete.skillLevel}</Badge>
-            <Badge variant="secondary">{athlete.boxAffiliation}</Badge>
+          <CardTitle className="font-headline text-lg mb-1">{athlete.firstName} {athlete.lastName}</CardTitle>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Badge variant="outline" className="font-mono uppercase">{skillLevel}</Badge>
+            {athlete.boxAffiliationId && athlete.boxAffiliationId !== 'none' && (
+                <Badge variant="secondary">{athlete.boxAffiliationId}</Badge>
+            )}
           </div>
         </div>
       </CardHeader>
