@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Edit, Instagram, Mail, Phone, MapPin, BarChart2, PlusCircle, Trophy } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
+import { RegistrationManagementDialog } from '@/components/registration-management-dialog';
 
 const getStatusBadgeVariant = (status: Registration['paymentStatus']) => {
   switch (status) {
@@ -243,7 +244,13 @@ export default function DashboardPage() {
                           <Badge variant={getStatusBadgeVariant(reg.paymentStatus)} className="capitalize">
                             {getStatusText(reg.paymentStatus)}
                           </Badge>
-                          <Button variant="secondary" size="sm">Gestionar</Button>
+                           <RegistrationManagementDialog 
+                              registration={reg} 
+                              competition={competition} 
+                              category={category}
+                            >
+                               <Button variant="secondary" size="sm">Gestionar</Button>
+                           </RegistrationManagementDialog>
                         </div>
                       </div>
                     );
