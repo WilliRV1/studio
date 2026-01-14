@@ -18,9 +18,6 @@
  * - **Public Read-Only Data**: The `/boxes` and `/user_roles` collections are treated as public reference data. They are readable by anyone but cannot be modified by clients, ensuring data integrity. This will require an admin backend to manage.
  * - **Scoped Role Lookups**: Users can only read their own role assignment from `/athlete_roles`. Listing all role assignments is disabled to prevent leaking user information. Role management is assumed to be an admin-only task and is disallowed from the client.
  *
- * ## Denormalization for Authorization
- * To create simpler and more performant rules, data required for authorization decisions should be denormalized. For example, to implement role-based access control (e.g., an 'Organizer' editing an event), the user's role should be stored directly on their `/users/{userId}` document or provided as a custom authentication claim. This ruleset currently locks down write access that would depend on such roles, pending the implementation of a robust role-checking mechanism.
- *
  */
 rules_version = '2';
 service cloud.firestore {
@@ -120,14 +117,14 @@ service cloud.firestore {
      * @description Associates athletes with specific roles. This is a sensitive linking collection.
      * @path /athlete_roles/{athleteRoleId}
      * @allow (get) A user `user_abc` can read a role document if its `athleteId` field is `user_abc`.
-     * @deny (get) A user `user_abc` CANNOT read a role document where `athleteId` is `user_xyz`.
-     * @deny (list) No user can list all role assignments to prevent data leakage.
+     * @allow (list) A user `user_abc` can query the collection, but only for documents where `athleteId` is `user_abc`.
+     * @deny (list) A user `user_abc` CANNOT perform a general list query without filtering by their own `athleteId`.
      * @deny (create, update, delete) Role assignments are managed by an admin process, not by clients.
      * @principle Enforces strict, scoped access to sensitive relationship data.
      */
     match /athlete_roles/{athleteRoleId} {
       allow get: if isSignedIn() && request.auth.uid == get(/databases/$(database)/documents/athlete_roles/$(athleteRoleId)).data.athleteId;
-      allow list: if false;
+      allow list: if isSignedIn() && request.auth.uid == request.query.get("where.athleteId.equalTo");
       allow create, update, delete: if false;
     }
 
