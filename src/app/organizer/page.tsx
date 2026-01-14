@@ -1,12 +1,45 @@
+
+'use client';
+
+import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
+import { collection, query, where } from "firebase/firestore";
+import type { Competition } from "@/lib/types";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlusCircle } from "lucide-react";
 import Link from "next/link";
+import { Skeleton } from "@/components/ui/skeleton";
+import { CompetitionCard } from "@/components/competition-card";
 
-// TODO: Fetch and display events created by the organizer
-const organizerEvents: any[] = []; 
+function OrganizerSkeleton() {
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {Array.from({ length: 2 }).map((_, i) => (
+                 <div key={i} className="space-y-4">
+                    <Skeleton className="h-48 w-full" />
+                    <div className="space-y-2 p-2">
+                        <Skeleton className="h-6 w-3/4" />
+                        <Skeleton className="h-4 w-1/2" />
+                        <Skeleton className="h-4 w-1/2" />
+                    </div>
+                </div>
+            ))}
+        </div>
+    )
+}
 
 export default function OrganizerPage() {
+    const { user } = useUser();
+    const firestore = useFirestore();
+
+    const organizerEventsRef = useMemoFirebase(() => {
+        if (!user || !firestore) return null;
+        return query(collection(firestore, 'competitions'), where('organizerId', '==', user.uid));
+    }, [user, firestore]);
+
+    const { data: organizerEvents, isLoading } = useCollection<Competition>(organizerEventsRef);
+
   return (
     <div className="container mx-auto py-8 md:py-12">
         <div className="flex justify-between items-center mb-12">
@@ -32,9 +65,13 @@ export default function OrganizerPage() {
                 <CardDescription>Una lista de las competencias que estás organizando.</CardDescription>
             </CardHeader>
             <CardContent>
-                {organizerEvents.length > 0 ? (
+                {isLoading ? (
+                    <OrganizerSkeleton />
+                ) : organizerEvents && organizerEvents.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* TODO: Map over actual events and display them */}
+                        {organizerEvents.map(event => (
+                           <CompetitionCard key={event.id} competition={event} />
+                        ))}
                     </div>
                 ) : (
                     <div className="text-center py-16 border-2 border-dashed rounded-lg">

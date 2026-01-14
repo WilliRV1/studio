@@ -1,3 +1,4 @@
+
 import Link from "next/link";
 import Image from "next/image";
 import type { Competition } from "@/lib/types";
@@ -6,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { MapPin, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { useUser } from "@/firebase";
 
 type CompetitionCardProps = {
   competition: Competition;
@@ -13,12 +15,16 @@ type CompetitionCardProps = {
 };
 
 export function CompetitionCard({ competition, className }: CompetitionCardProps) {
+  const { user } = useUser();
   const regStartDate = competition.registrationStartDate.toDate();
   const regEndDate = competition.registrationEndDate.toDate();
   const isRegistrationOpen = new Date() >= regStartDate && new Date() <= regEndDate;
+  const isOrganizer = user?.uid === competition.organizerId;
+  const linkHref = isOrganizer ? `/organizer/events/${competition.id}` : `/competitions/${competition.id}`;
+
 
   return (
-    <Link href={`/competitions/${competition.id}`} className="group block">
+    <Link href={linkHref} className="group block">
       <Card className={cn("overflow-hidden h-full flex flex-col transition-all duration-300 hover:border-primary/80 hover:shadow-lg hover:shadow-primary/10", className)}>
         <CardHeader className="p-0">
           <div className="relative h-48 w-full">
@@ -29,7 +35,9 @@ export function CompetitionCard({ competition, className }: CompetitionCardProps
               className="object-cover transition-transform duration-300 group-hover:scale-105"
               data-ai-hint="crossfit competition"
             />
-            {isRegistrationOpen ? (
+             {isOrganizer ? (
+                <Badge variant="default" className="absolute top-3 right-3 bg-accent text-accent-foreground">Modo Organizador</Badge>
+             ) : isRegistrationOpen ? (
               <Badge className="absolute top-3 right-3 bg-primary text-primary-foreground">Inscripciones Abiertas</Badge>
             ) : (
                <Badge variant="secondary" className="absolute top-3 right-3">Inscripciones Cerradas</Badge>
@@ -50,7 +58,7 @@ export function CompetitionCard({ competition, className }: CompetitionCardProps
           </div>
         </CardContent>
         <CardFooter>
-            <p className="text-xs text-primary font-semibold">Ver Detalles &rarr;</p>
+            <p className="text-xs text-primary font-semibold">{isOrganizer ? 'Gestionar Evento' : 'Ver Detalles'} &rarr;</p>
         </CardFooter>
       </Card>
     </Link>
