@@ -123,8 +123,8 @@ service cloud.firestore {
      * @principle Enforces strict, scoped access to sensitive relationship data.
      */
     match /athlete_roles/{athleteRoleId} {
-      allow get: if isSignedIn() && request.auth.uid == get(/databases/$(database)/documents/athlete_roles/$(athleteRoleId)).data.athleteId;
-      allow list: if isSignedIn() && request.auth.uid == request.query.get("where.athleteId.equalTo");
+      allow get: if isSignedIn() && resource.data.athleteId == request.auth.uid;
+      allow list: if isSignedIn() && request.query.where.athleteId == request.auth.uid;
       allow create, update, delete: if false;
     }
 
