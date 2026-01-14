@@ -3,15 +3,15 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { useDoc, useFirestore, useMemoFirebase, useUser } from "@/firebase";
-import { doc } from "firebase/firestore";
-import type { Category, Competition } from "@/lib/types";
+import { useDoc, useFirestore, useMemoFirebase, useUser, useCollection } from "@/firebase";
+import { doc, collection, query, where } from "firebase/firestore";
+import type { Category, Competition, Registration } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Calendar, MapPin, Users, DollarSign, FileText, BarChart2, Search, Trophy } from "lucide-react";
+import { Calendar, MapPin, Users, DollarSign, FileText, BarChart2, Search, Trophy, Lock } from "lucide-react";
 import { format } from "date-fns";
 import PartnerFinderClient from "./_components/partner-finder-client";
 import { leaderboardData } from "@/lib/data";
@@ -58,7 +58,7 @@ function DetailPageSkeleton() {
 
 export default function CompetitionDetailPage({ params }: { params: { id: string } }) {
   const firestore = useFirestore();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
 
   const competitionRef = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -67,7 +67,21 @@ export default function CompetitionDetailPage({ params }: { params: { id: string
 
   const { data: competition, isLoading, error } = useDoc<Competition>(competitionRef);
 
-  if (isLoading) {
+  const userRegistrationRef = useMemoFirebase(() => {
+    if (!firestore || !user || !params.id) return null;
+    return query(
+      collection(firestore, 'registrations'),
+      where('athleteId', '==', user.uid),
+      where('competitionId', '==', params.id)
+    );
+  }, [firestore, user, params.id]);
+
+  const { data: userRegistrations } = useCollection<Registration>(userRegistrationRef);
+  const userRegistration = userRegistrations?.[0];
+  const isPaymentApproved = userRegistration?.paymentStatus === 'approved';
+
+
+  if (isLoading || isUserLoading) {
     return <DetailPageSkeleton />;
   }
 
@@ -114,7 +128,7 @@ export default function CompetitionDetailPage({ params }: { params: { id: string
             <TabsTrigger value="overview"><Users className="h-4 w-4 mr-2 hidden md:inline"/>Información</TabsTrigger>
             <TabsTrigger value="categories"><Trophy className="h-4 w-4 mr-2 hidden md:inline"/>Categorías</TabsTrigger>
             <TabsTrigger value="partner-finder" disabled={!partnerFinderCategory}><Search className="h-4 w-4 mr-2 hidden md:inline"/>Buscar Pareja</TabsTrigger>
-            <TabsTrigger value="leaderboard"><BarChart2 className="h-4 w-4 mr-2 hidden md:inline"/>Leaderboard</TabsTrigger>
+            <TabsTrigger value="leaderboard" disabled={!isPaymentApproved && !!user}><BarChart2 className="h-4 w-4 mr-2 hidden md:inline"/>Leaderboard</TabsTrigger>
           </TabsList>
           
           <TabsContent value="overview">
@@ -196,31 +210,46 @@ export default function CompetitionDetailPage({ params }: { params: { id: string
           </TabsContent>
 
           <TabsContent value="leaderboard">
-            <Card>
-                <CardHeader>
-                  <CardTitle className="font-headline">Leaderboard en Vivo</CardTitle>
-                </CardHeader>
-                <CardContent>
-                   <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-[80px]">Puesto</TableHead>
-                        <TableHead>Atleta/Equipo</TableHead>
-                        <TableHead className="text-right">Puntos Totales</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {leaderboardData.map((entry) => (
-                        <TableRow key={entry.rank}>
-                          <TableCell className="font-bold text-lg">{entry.rank}</TableCell>
-                          <TableCell className="font-medium">{entry.athleteName}</TableCell>
-                          <TableCell className="text-right font-bold text-primary">{entry.totalPoints}</TableCell>
+            {isPaymentApproved || !user ? (
+              <Card>
+                  <CardHeader>
+                    <CardTitle className="font-headline">Leaderboard en Vivo</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[80px]">Puesto</TableHead>
+                          <TableHead>Atleta/Equipo</TableHead>
+                          <TableHead className="text-right">Puntos Totales</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
+                      </TableHeader>
+                      <TableBody>
+                        {leaderboardData.map((entry) => (
+                          <TableRow key={entry.rank}>
+                            <TableCell className="font-bold text-lg">{entry.rank}</TableCell>
+                            <TableCell className="font-medium">{entry.athleteName}</TableCell>
+                            <TableCell className="text-right font-bold text-primary">{entry.totalPoints}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+            ) : (
+                <Card className="text-center py-12">
+                  <CardHeader>
+                      <Lock className="mx-auto h-12 w-12 text-muted-foreground mb-4"/>
+                      <CardTitle className="font-headline">Contenido Exclusivo</CardTitle>
+                  </CardHeader>
+                  <CardContent className="max-w-md mx-auto">
+                    <p className="text-muted-foreground mb-6">Para ver el leaderboard y los resultados en vivo, tu inscripción debe estar aprobada. Por favor, completa tu pago.</p>
+                     <Button asChild>
+                        <Link href="/dashboard">Gestionar mi Inscripción</Link>
+                     </Button>
+                  </CardContent>
+                </Card>
+            )}
           </TabsContent>
         </Tabs>
       </div>
