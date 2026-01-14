@@ -15,7 +15,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
-import { Calendar, DollarSign, Edit, MapPin, PlusCircle, Trash2, Users, Dumbbell, ListOrdered } from "lucide-react";
+import { Calendar, DollarSign, Edit, MapPin, PlusCircle, Trash2, Users, Dumbbell } from "lucide-react";
 import { format } from "date-fns";
 import {
   Dialog,
