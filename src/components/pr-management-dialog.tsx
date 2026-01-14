@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -14,7 +14,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-  DialogClose,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,16 +24,22 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { CalendarIcon, Loader2 } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import { PR_CATEGORIES, getPrCategoryById } from '@/lib/pr-data';
+import { PR_CATEGORIES, getPrCategoryById, formatPrValue } from '@/lib/pr-data';
 import { PersonalRecord } from '@/lib/types';
 import { Timestamp } from 'firebase/firestore';
 
 const prSchema = z.object({
   id: z.string({ required_error: 'Debes seleccionar un ejercicio.' }),
   value: z.preprocess(
-    (val) => (typeof val === 'string' && val.includes(':')) 
-        ? (parseInt(val.split(':')[0], 10) * 60) + parseInt(val.split(':')[1], 10)
-        : Number(val),
+    (val) => {
+      if (typeof val === 'string' && val.includes(':')) {
+        const parts = val.split(':').map(Number);
+        if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+          return parts[0] * 60 + parts[1];
+        }
+      }
+      return Number(val);
+    },
     z.number().positive({ message: 'El valor debe ser positivo.' })
   ),
   date: z.date({ required_error: 'La fecha es requerida.' }),
@@ -48,24 +53,31 @@ interface PrManagementDialogProps {
   setIsOpen: (isOpen: boolean) => void;
   onSubmit: (data: PersonalRecord) => Promise<void>;
   existingPr?: PersonalRecord | null;
-  children?: React.ReactNode;
 }
 
 export function PrManagementDialog({ isOpen, setIsOpen, onSubmit, existingPr }: PrManagementDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const defaultValues = existingPr ? {
-      ...existingPr,
-      date: existingPr.date.toDate(),
-      value: existingPr.value,
-  } : {
-      date: new Date(),
-  };
-
   const methods = useForm<PrFormValues>({
     resolver: zodResolver(prSchema),
-    defaultValues: defaultValues as any,
   });
+
+  useEffect(() => {
+    if (existingPr) {
+      methods.reset({
+        ...existingPr,
+        date: existingPr.date.toDate(),
+        value: existingPr.value,
+      });
+    } else {
+      methods.reset({
+        id: undefined,
+        value: undefined,
+        date: new Date(),
+        notes: '',
+      });
+    }
+  }, [existingPr, methods, isOpen]);
 
   const selectedPrId = methods.watch('id');
   const selectedPrCategory = getPrCategoryById(selectedPrId);
@@ -79,7 +91,6 @@ export function PrManagementDialog({ isOpen, setIsOpen, onSubmit, existingPr }: 
     await onSubmit(finalData);
     setIsSubmitting(false);
     setIsOpen(false);
-    methods.reset();
   };
 
   return (
@@ -99,7 +110,7 @@ export function PrManagementDialog({ isOpen, setIsOpen, onSubmit, existingPr }: 
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Ejercicio</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!!existingPr}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecciona un ejercicio" />
@@ -125,14 +136,9 @@ export function PrManagementDialog({ isOpen, setIsOpen, onSubmit, existingPr }: 
                         <FormLabel>Resultado ({selectedPrCategory?.unit || 'valor'})</FormLabel>
                         <FormControl>
                             <Input 
-                                placeholder={selectedPrCategory?.type === 'time' ? 'mm:ss' : '0'} 
+                                placeholder={selectedPrCategory?.type === 'time' ? 'mm:ss' : '0'}
                                 {...field}
-                                // Format back to mm:ss for display if it's a time type and value exists
-                                value={
-                                    field.value && selectedPrCategory?.type === 'time'
-                                    ? `${Math.floor(field.value / 60)}:${(field.value % 60).toString().padStart(2, '0')}`
-                                    : field.value || ''
-                                }
+                                value={field.value ? (selectedPrCategory?.type === 'time' ? formatPrValue(field.value, 'min:s') : field.value) : ''}
                             />
                         </FormControl>
                         <FormMessage />
@@ -171,7 +177,7 @@ export function PrManagementDialog({ isOpen, setIsOpen, onSubmit, existingPr }: 
                     <FormItem>
                         <FormLabel>Notas (Opcional)</FormLabel>
                         <FormControl>
-                            <Textarea placeholder="Ej: Me sentí fuerte ese día..." {...field} />
+                            <Textarea placeholder="Ej: Me sentí fuerte ese día..." {...field} value={field.value ?? ''}/>
                         </FormControl>
                         <FormMessage />
                     </FormItem>
@@ -179,9 +185,7 @@ export function PrManagementDialog({ isOpen, setIsOpen, onSubmit, existingPr }: 
             />
 
             <DialogFooter className="pt-4">
-              <DialogClose asChild>
-                <Button type="button" variant="ghost">Cancelar</Button>
-              </DialogClose>
+              <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Cancelar</Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {existingPr ? 'Guardar Cambios' : 'Añadir PR'}

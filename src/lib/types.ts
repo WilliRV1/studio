@@ -3,7 +3,7 @@ import type { Timestamp } from "firebase/firestore";
 
 export type PersonalRecord = {
   id: string; // e.g., 'snatch'
-  value: number; // The weight or time
+  value: number; // The weight in kg or time in seconds
   date: Timestamp;
   notes?: string;
 };

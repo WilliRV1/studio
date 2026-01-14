@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Edit, Instagram, Mail, Phone, MapPin, BarChart2, PlusCircle, Trophy, Briefcase, Trash2 } from 'lucide-react';
+import { Edit, Instagram, Mail, Phone, MapPin, PlusCircle, Trophy, Briefcase, Trash2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { RegistrationManagementDialog } from '@/components/registration-management-dialog';
@@ -181,7 +181,7 @@ export default function DashboardPage() {
     }
     
     try {
-        updateDocumentNonBlocking(userDocRef, { personalRecords: updatedPrs });
+        await updateDocumentNonBlocking(userDocRef, { personalRecords: updatedPrs });
         toast({
             title: `¡Récord ${selectedPr ? 'actualizado' : 'añadido'}!`,
             description: `Tu PR de ${getPrCategoryById(data.id)?.name} ha sido guardado.`,
@@ -198,7 +198,7 @@ export default function DashboardPage() {
     const updatedPrs = (athlete.personalRecords || []).filter(pr => pr.id !== prId);
     
     try {
-        updateDocumentNonBlocking(userDocRef, { personalRecords: updatedPrs });
+        await updateDocumentNonBlocking(userDocRef, { personalRecords: updatedPrs });
         toast({
             title: 'Récord eliminado',
         });
@@ -226,7 +226,7 @@ export default function DashboardPage() {
   }
 
   const sortedPrs = athlete.personalRecords 
-    ? [...athlete.personalRecords].sort((a, b) => b.date.toMillis() - a.date.toMillis())
+    ? [...athlete.personalRecords].sort((a, b) => b.date.toDate().getTime() - a.date.toDate().getTime())
     : [];
 
   return (
