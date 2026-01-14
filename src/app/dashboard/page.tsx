@@ -4,7 +4,6 @@ import { useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { doc } from 'firebase/firestore';
 
 import type { Athlete, Registration } from '@/lib/types';
-import { competitions } from '@/lib/data';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -12,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Edit, Instagram, Mail, Phone, MapPin, BarChart2, PlusCircle, Trophy } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import Link from 'next/link';
 
 const getStatusBadgeVariant = (status: Registration['paymentStatus']) => {
   switch (status) {
@@ -128,7 +128,7 @@ export default function DashboardPage() {
                     <MapPin className="h-4 w-4 text-muted-foreground"/>
                     <span>{athlete.city}, {athlete.department}</span>
                 </div>
-                {athlete.boxAffiliationId !== 'none' && (
+                {athlete.boxAffiliationId && athlete.boxAffiliationId !== 'none' && (
                     <span className="font-semibold">{athlete.boxAffiliationId}</span>
                 )}
               </CardDescription>
@@ -173,12 +173,12 @@ export default function DashboardPage() {
                 <CardContent>
                     {athlete.personalRecords ? (
                          <div className="grid grid-cols-2 gap-4 text-sm">
-                            {Object.entries(athlete.personalRecords).map(([key, value]) => (
+                            {/*Object.entries(athlete.personalRecords).map(([key, value]) => (
                                 <div key={key} className="flex justify-between border-b pb-2">
                                     <span className="text-muted-foreground">{key}</span>
                                     <span className="font-semibold">{value}</span>
                                 </div>
-                            ))}
+                            ))*/}
                         </div>
                     ): (
                         <div className="text-center py-6 border-2 border-dashed rounded-lg">
@@ -205,13 +205,12 @@ export default function DashboardPage() {
               <div className="space-y-6">
                 {userRegistrations.length > 0 ? (
                   userRegistrations.map((reg) => {
-                    const comp = competitions.find((c) => c.id === reg.competitionId);
-                    if (!comp) return null;
-
+                    // TODO: Fetch competition data based on reg.competitionId
+                    const compName = 'Nombre de la Competición'; // Placeholder
                     return (
                       <div key={reg.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 border rounded-lg">
                         <div>
-                          <h3 className="font-bold">{comp.name}</h3>
+                          <h3 className="font-bold">{compName}</h3>
                           <p className="text-sm text-muted-foreground">{reg.teamName || 'Individual'}</p>
                         </div>
                         <div className="flex items-center gap-4">
@@ -227,7 +226,7 @@ export default function DashboardPage() {
                   <div className="text-center py-10 border-2 border-dashed rounded-lg">
                     <p className="text-muted-foreground mb-4">Aún no te has inscrito en ninguna competición.</p>
                     <Button asChild>
-                      <a href="/competitions">Buscar una Competición</a>
+                      <Link href="/competitions">Buscar una Competición</Link>
                     </Button>
                   </div>
                 )}
