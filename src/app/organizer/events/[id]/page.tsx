@@ -3,7 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { useDoc, useFirestore, useMemoFirebase, useUser } from "@/firebase";
 import { doc, updateDoc, arrayUnion } from "firebase/firestore";
-import type { Competition, Category } from "@/lib/types";
+import type { Competition, Category, Workout } from "@/lib/types";
 import { z } from "zod";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,7 +15,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
-import { Calendar, DollarSign, Edit, MapPin, PlusCircle, Trash2, Users } from "lucide-react";
+import { Calendar, DollarSign, Edit, MapPin, PlusCircle, Trash2, Users, Dumbbell, ListOrdered } from "lucide-react";
 import { format } from "date-fns";
 import {
   Dialog,
@@ -32,6 +32,7 @@ import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/comp
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RegistrationsDashboard } from "./_components/registrations-dashboard";
+import { Textarea } from "@/components/ui/textarea";
 
 
 const categorySchema = z.object({
@@ -44,6 +45,13 @@ const categorySchema = z.object({
 });
 
 type CategoryFormValues = z.infer<typeof categorySchema>;
+
+const wodSchema = z.object({
+    name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
+    description: z.string().min(10, "La descripción es muy corta."),
+    type: z.enum(['For Time', 'AMRAP', 'EMOM', 'Max Weight'], { required_error: "Debes seleccionar un tipo." }),
+});
+type WodFormValues = z.infer<typeof wodSchema>;
 
 
 function EventManagementSkeleton() {
@@ -91,7 +99,8 @@ export default function EventManagementPage() {
     const firestore = useFirestore();
     const router = useRouter();
     const { toast } = useToast();
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
+    const [isWodDialogOpen, setIsWodDialogOpen] = useState(false);
 
 
     const competitionRef = useMemoFirebase(() => {
@@ -101,16 +110,20 @@ export default function EventManagementPage() {
 
     const { data: competition, isLoading, error } = useDoc<Competition>(competitionRef);
 
-    const methods = useForm<CategoryFormValues>({
+    const categoryMethods = useForm<CategoryFormValues>({
         resolver: zodResolver(categorySchema),
         defaultValues: {
             requiresPartner: false
         }
     });
-    
-    const watchType = methods.watch("type");
 
-    const onSubmit = async (data: CategoryFormValues) => {
+    const wodMethods = useForm<WodFormValues>({
+        resolver: zodResolver(wodSchema),
+    });
+    
+    const watchCategoryType = categoryMethods.watch("type");
+
+    const onCategorySubmit = async (data: CategoryFormValues) => {
         if (!competitionRef) return;
 
         const requiresPartner = data.type === 'Pairs' || data.type === 'Team';
@@ -119,7 +132,7 @@ export default function EventManagementPage() {
             id: uuidv4(),
             ...data,
             requiresPartner,
-            registeredCount: 0, // Initialize count
+            registeredCount: 0,
         };
 
         try {
@@ -127,13 +140,35 @@ export default function EventManagementPage() {
                 categories: arrayUnion(newCategory)
             });
             toast({ title: "¡Categoría añadida!", description: `La categoría "${data.name}" fue creada.` });
-            methods.reset();
-            setIsDialogOpen(false);
+            categoryMethods.reset();
+            setIsCategoryDialogOpen(false);
         } catch (e) {
             console.error(e);
             toast({ variant: 'destructive', title: "Error", description: "No se pudo añadir la categoría." });
         }
     };
+    
+    const onWodSubmit = async (data: WodFormValues) => {
+        if (!competitionRef || !competition) return;
+
+        const newWod: Workout = {
+            id: uuidv4(),
+            ...data,
+            order: (competition.workouts?.length || 0) + 1,
+        };
+
+        try {
+            await updateDoc(competitionRef, {
+                workouts: arrayUnion(newWod)
+            });
+            toast({ title: "¡WOD añadido!", description: `El WOD "${data.name}" fue creado.` });
+            wodMethods.reset();
+            setIsWodDialogOpen(false);
+        } catch (e) {
+            console.error(e);
+            toast({ variant: 'destructive', title: "Error", description: "No se pudo añadir el WOD." });
+        }
+    }
 
 
     if (isLoading) {
@@ -144,7 +179,6 @@ export default function EventManagementPage() {
         return <div className="container text-center py-12">Competencia no encontrada.</div>
     }
     
-    // Security Check
     if (!user || user.uid !== competition.organizerId) {
         router.replace('/competitions');
         return <div className="container text-center py-12">No tienes permiso para ver esta página.</div>
@@ -172,13 +206,14 @@ export default function EventManagementPage() {
                     </CardHeader>
                 </Card>
 
+                {/* Categories Card */}
                 <Card>
                     <CardHeader className="flex flex-row justify-between items-center">
                         <div>
                             <CardTitle className="font-headline">Categorías del Evento</CardTitle>
                             <CardDescription>Añade y gestiona las categorías para tu competencia.</CardDescription>
                         </div>
-                         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                         <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
                             <DialogTrigger asChild>
                                 <Button>
                                     <PlusCircle className="mr-2 h-4 w-4" />
@@ -192,32 +227,32 @@ export default function EventManagementPage() {
                                     Completa los detalles para la nueva categoría de tu evento.
                                 </DialogDescription>
                                 </DialogHeader>
-                                <FormProvider {...methods}>
-                                <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-4 py-4">
-                                     <FormField control={methods.control} name="name" render={({ field }) => (
+                                <FormProvider {...categoryMethods}>
+                                <form onSubmit={categoryMethods.handleSubmit(onCategorySubmit)} className="space-y-4 py-4">
+                                     <FormField control={categoryMethods.control} name="name" render={({ field }) => (
                                         <FormItem><FormLabel>Nombre</FormLabel><FormControl><Input placeholder="Ej: RX Individual" {...field} /></FormControl><FormMessage /></FormItem>
                                      )} />
                                       <div className="grid grid-cols-2 gap-4">
-                                        <FormField control={methods.control} name="type" render={({ field }) => (
+                                        <FormField control={categoryMethods.control} name="type" render={({ field }) => (
                                             <FormItem><FormLabel>Tipo</FormLabel>
                                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                 <FormControl><SelectTrigger><SelectValue placeholder="Selecciona..." /></SelectTrigger></FormControl>
                                                 <SelectContent><SelectItem value="Individual">Individual</SelectItem><SelectItem value="Pairs">Parejas</SelectItem><SelectItem value="Team">Equipo</SelectItem></SelectContent>
                                             </Select><FormMessage /></FormItem>
                                         )} />
-                                        <FormField control={methods.control} name="gender" render={({ field }) => (
+                                        <FormField control={categoryMethods.control} name="gender" render={({ field }) => (
                                              <FormItem><FormLabel>Género</FormLabel>
-                                            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={watchType === 'Pairs' || watchType === 'Team'}>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={watchCategoryType === 'Individual'}>
                                                 <FormControl><SelectTrigger><SelectValue placeholder="Selecciona..." /></SelectTrigger></FormControl>
                                                 <SelectContent><SelectItem value="Male">Masculino</SelectItem><SelectItem value="Female">Femenino</SelectItem><SelectItem value="Mixed">Mixto</SelectItem></SelectContent>
                                             </Select><FormMessage /></FormItem>
                                         )} />
                                       </div>
                                        <div className="grid grid-cols-2 gap-4">
-                                        <FormField control={methods.control} name="price" render={({ field }) => (
+                                        <FormField control={categoryMethods.control} name="price" render={({ field }) => (
                                             <FormItem><FormLabel>Precio (COP)</FormLabel><FormControl><Input type="number" placeholder="150000" {...field} /></FormControl><FormMessage /></FormItem>
                                         )} />
-                                        <FormField control={methods.control} name="spots" render={({ field }) => (
+                                        <FormField control={categoryMethods.control} name="spots" render={({ field }) => (
                                             <FormItem><FormLabel>Cupos</FormLabel><FormControl><Input type="number" placeholder="50" {...field} /></FormControl><FormMessage /></FormItem>
                                         )} />
                                        </div>
@@ -271,6 +306,86 @@ export default function EventManagementPage() {
                     </CardContent>
                 </Card>
                 
+                {/* WODs Card */}
+                <Card>
+                    <CardHeader className="flex flex-row justify-between items-center">
+                        <div>
+                            <CardTitle className="font-headline">WODs de la Competencia</CardTitle>
+                            <CardDescription>Define los workouts que los atletas enfrentarán.</CardDescription>
+                        </div>
+                         <Dialog open={isWodDialogOpen} onOpenChange={setIsWodDialogOpen}>
+                            <DialogTrigger asChild>
+                                <Button>
+                                    <PlusCircle className="mr-2 h-4 w-4" />
+                                    Añadir WOD
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-md">
+                                <DialogHeader>
+                                    <DialogTitle className="font-headline">Nuevo WOD</DialogTitle>
+                                    <DialogDescription>Completa los detalles para el nuevo workout.</DialogDescription>
+                                </DialogHeader>
+                                <FormProvider {...wodMethods}>
+                                    <form onSubmit={wodMethods.handleSubmit(onWodSubmit)} className="space-y-4 py-4">
+                                        <FormField control={wodMethods.control} name="name" render={({ field }) => (
+                                            <FormItem><FormLabel>Nombre del WOD</FormLabel><FormControl><Input placeholder="Ej: 'Chipper de la Muerte'" {...field} /></FormControl><FormMessage /></FormItem>
+                                        )} />
+                                        <FormField control={wodMethods.control} name="type" render={({ field }) => (
+                                            <FormItem><FormLabel>Tipo de WOD</FormLabel>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <FormControl><SelectTrigger><SelectValue placeholder="Selecciona el tipo..." /></SelectTrigger></FormControl>
+                                                <SelectContent>
+                                                    <SelectItem value="For Time">For Time</SelectItem>
+                                                    <SelectItem value="AMRAP">AMRAP</SelectItem>
+                                                    <SelectItem value="EMOM">EMOM</SelectItem>
+                                                    <SelectItem value="Max Weight">Max Weight</SelectItem>
+                                                </SelectContent>
+                                            </Select><FormMessage /></FormItem>
+                                        )} />
+                                        <FormField control={wodMethods.control} name="description" render={({ field }) => (
+                                            <FormItem><FormLabel>Descripción y Movimientos</FormLabel><FormControl><Textarea placeholder="21-15-9 de...\nDeadlift (225/155 lbs)\nBurpees sobre la barra" {...field} rows={5} /></FormControl><FormMessage /></FormItem>
+                                        )} />
+                                        <DialogFooter className="pt-4">
+                                            <DialogClose asChild><Button type="button" variant="secondary">Cancelar</Button></DialogClose>
+                                            <Button type="submit">Crear WOD</Button>
+                                        </DialogFooter>
+                                    </form>
+                                </FormProvider>
+                            </DialogContent>
+                        </Dialog>
+                    </CardHeader>
+                    <CardContent>
+                       {(competition.workouts && competition.workouts.length > 0) ? (
+                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                               {competition.workouts.sort((a, b) => a.order - b.order).map((wod) => (
+                                   <Card key={wod.id} className="relative group bg-muted/50">
+                                        <CardHeader>
+                                            <CardTitle className="font-headline text-lg flex items-center justify-between">
+                                                <span>{wod.name}</span>
+                                                <Badge variant="outline" className="font-mono text-xs">{wod.type}</Badge>
+                                            </CardTitle>
+                                            <CardDescription>WOD #{wod.order}</CardDescription>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{wod.description}</p>
+                                        </CardContent>
+                                        <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <Button variant="ghost" size="icon" className="h-8 w-8"><Edit className="h-4 w-4" /></Button>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive"><Trash2 className="h-4 w-4" /></Button>
+                                        </div>
+                                   </Card>
+                               ))}
+                           </div>
+                       ) : (
+                        <div className="text-center py-12 border-2 border-dashed rounded-lg">
+                            <Dumbbell className="mx-auto h-10 w-10 text-muted-foreground" />
+                            <h3 className="mt-4 text-xl font-semibold mb-2">Aún no hay WODs</h3>
+                            <p className="text-muted-foreground mb-4">Define los desafíos que tus atletas enfrentarán.</p>
+                        </div>
+                       )}
+                    </CardContent>
+                </Card>
+
                 <RegistrationsDashboard competition={competition} />
              </div>
         </div>

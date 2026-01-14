@@ -35,6 +35,14 @@ export type Category = {
   requiresPartner: boolean;
 };
 
+export type Workout = {
+  id: string;
+  name: string;
+  description: string;
+  type: 'For Time' | 'AMRAP' | 'EMOM' | 'Max Weight';
+  order: number;
+};
+
 export type Competition = {
   id: string;
   name: string;
@@ -47,6 +55,7 @@ export type Competition = {
   description: string;
   rulesUrl?: string;
   categories: Category[];
+  workouts: Workout[];
   organizerId: string;
   createdAt: Timestamp;
 };
@@ -62,14 +71,6 @@ export type Registration = {
   paymentProofUrl?: string;
   rejectionReason?: string;
   registeredAt: Timestamp;
-};
-
-export type Workout = {
-  id: string;
-  name: string;
-  description: string;
-  movements: string[];
-  order: number;
 };
 
 export type LeaderboardEntry = {

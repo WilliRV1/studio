@@ -94,8 +94,8 @@ export default function CreateEventPage() {
                 bannerUrl,
                 rulesUrl: rulebookUrl,
                 createdAt: serverTimestamp(),
-                // Categories will be added in a later step
                 categories: [], 
+                workouts: [],
             };
             
             await addDocumentNonBlocking(competitionsRef, eventData);
