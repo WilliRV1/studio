@@ -40,7 +40,7 @@ export function Header() {
   const firestore = useFirestore();
 
   const userRolesRef = useMemoFirebase(() => {
-    if (!user) return null;
+    if (!firestore || !user) return null; // <-- Important: Wait for user
     return query(collection(firestore, 'athlete_roles'), where('athleteId', '==', user.uid));
   }, [firestore, user]);
 

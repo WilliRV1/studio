@@ -122,9 +122,10 @@ service cloud.firestore {
      * @deny (create, update, delete) Role assignments are managed by an admin process, not by clients.
      * @principle Enforces strict, scoped access to sensitive relationship data.
      */
-    match /athlete_roles/{athleteRoleId} {
+     match /athlete_roles/{athleteRoleId} {
       allow get: if isSignedIn() && resource.data.athleteId == request.auth.uid;
-      allow list: if isSignedIn() && request.query.get('athleteId') == request.auth.uid;
+      // A user can only query for their own roles. This is critical for security.
+      allow list: if isSignedIn() && request.query.limit <= 10 && request.query.get('where', [['athleteId', '==', request.auth.uid]]) != null;
       allow create: if isSignedIn() && request.resource.data.athleteId == request.auth.uid;
       allow update, delete: if false;
     }
