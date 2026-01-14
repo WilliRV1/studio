@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser, useFirestore, useMemoFirebase, useDoc, useCollection } from '@/firebase';
+import { useUser, useFirestore, useMemoFirebase, useDoc, useCollection, addDocumentNonBlocking } from '@/firebase';
 import { doc, collection, query, where } from 'firebase/firestore';
 
 import type { Athlete, Registration, Competition } from '@/lib/types';
@@ -9,10 +9,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Edit, Instagram, Mail, Phone, MapPin, BarChart2, PlusCircle, Trophy } from 'lucide-react';
+import { Edit, Instagram, Mail, Phone, MapPin, BarChart2, PlusCircle, Trophy, Briefcase } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { RegistrationManagementDialog } from '@/components/registration-management-dialog';
+import { useToast } from '@/hooks/use-toast';
 
 const getStatusBadgeVariant = (status: Registration['paymentStatus']) => {
   switch (status) {
@@ -91,6 +92,7 @@ function ProfileSkeleton() {
 export default function DashboardPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
+  const { toast } = useToast();
 
   const userDocRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -106,6 +108,15 @@ export default function DashboardPage() {
 
   const { data: userRegistrations, isLoading: areRegistrationsLoading } = useCollection<Registration>(registrationsRef);
 
+  const userRolesRef = useMemoFirebase(() => {
+    if (!firestore || !user?.uid) return null;
+    return query(collection(firestore, 'athlete_roles'), where('athleteId', '==', user.uid));
+  }, [firestore, user]);
+
+  const { data: userRoles } = useCollection(userRolesRef);
+  const hasOrganizerRole = userRoles?.some(role => role.roleId === 'role-organizer' || role.roleId === 'role-admin');
+
+
   // We fetch all competitions to easily look up names.
   // For a larger scale app, this might be optimized.
   const competitionsRef = useMemoFirebase(() => {
@@ -113,6 +124,27 @@ export default function DashboardPage() {
     return collection(firestore, 'competitions');
   }, [firestore]);
   const { data: competitions } = useCollection<Competition>(competitionsRef);
+  
+  const handleBecomeOrganizer = () => {
+    if (!user) return;
+    const athleteRoleRef = collection(firestore, 'athlete_roles');
+      addDocumentNonBlocking(athleteRoleRef, {
+        athleteId: user.uid,
+        roleId: 'role-organizer'
+      }).then(() => {
+        toast({
+            title: '¡Felicitaciones!',
+            description: 'Ahora eres un organizador. Revisa el nuevo enlace en la navegación.',
+        });
+      }).catch(err => {
+        console.error("Error adding organizer role: ", err);
+        toast({
+            variant: "destructive",
+            title: 'Error',
+            description: 'No se pudo asignar el rol de organizador.',
+        });
+      });
+  };
 
 
   if (isUserLoading || isAthleteLoading || areRegistrationsLoading) {
@@ -222,8 +254,8 @@ export default function DashboardPage() {
 
         </div>
 
-        {/* My Competitions */}
-        <div className="lg:col-span-2">
+        {/* My Competitions & Organizer Section */}
+        <div className="lg:col-span-2 space-y-8">
           <Card>
             <CardHeader>
               <CardTitle className="font-headline">Mis Competiciones</CardTitle>
@@ -270,6 +302,21 @@ export default function DashboardPage() {
               </div>
             </CardContent>
           </Card>
+          
+          {!hasOrganizerRole && (
+            <Card>
+                <CardHeader>
+                    <CardTitle className="font-headline flex items-center gap-2"><Briefcase /> Zona de Organizadores</CardTitle>
+                    <CardDescription>¿Quieres llevar tu evento al siguiente nivel? Crea y gestiona tus propias competencias en WodMatch.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Button onClick={handleBecomeOrganizer}>
+                        Convertirse en Organizador
+                    </Button>
+                </CardContent>
+            </Card>
+          )}
+
         </div>
       </div>
     </div>
