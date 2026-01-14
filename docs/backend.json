@@ -82,8 +82,7 @@
         "gender",
         "country",
         "department",
-        "city",
-        "boxAffiliationId"
+        "city"
       ]
     },
     "Box": {
@@ -161,6 +160,66 @@
         "athleteId",
         "roleId"
       ]
+    },
+    "Registration": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Registration",
+      "type": "object",
+      "description": "Represents an athlete's registration for a competition category.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the registration."
+        },
+        "athleteId": {
+          "type": "string",
+          "description": "The UID of the registered athlete."
+        },
+        "competitionId": {
+          "type": "string",
+          "description": "The ID of the competition."
+        },
+        "categoryId": {
+          "type": "string",
+          "description": "The ID of the category within the competition."
+        },
+        "teamName": {
+          "type": "string",
+          "description": "The name of the team, if applicable."
+        },
+        "tshirtSize": {
+          "type": "string",
+          "enum": ["S", "M", "L", "XL"],
+          "description": "The athlete's T-shirt size."
+        },
+        "paymentStatus": {
+          "type": "string",
+          "enum": ["pending_payment", "pending_approval", "approved", "rejected"],
+          "description": "The current status of the payment."
+        },
+        "paymentProofUrl": {
+          "type": "string",
+          "description": "URL of the uploaded payment proof."
+        },
+        "rejectionReason": {
+          "type": "string",
+          "description": "Reason for payment rejection, if applicable."
+        },
+        "registeredAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of when the registration was created."
+        }
+      },
+      "required": [
+        "id",
+        "athleteId",
+        "competitionId",
+        "categoryId",
+        "tshirtSize",
+        "paymentStatus",
+        "registeredAt"
+      ]
     }
   },
   "auth": {
@@ -231,6 +290,22 @@
             {
               "name": "userRoleId",
               "description": "The unique identifier of the user role."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/registrations/{registrationId}",
+        "definition": {
+          "entityName": "Registration",
+          "schema": {
+            "$ref": "#/backend/entities/Registration"
+          },
+          "description": "Stores athlete registration details for competitions. Each document is owned by the athlete who created it.",
+          "params": [
+            {
+              "name": "registrationId",
+              "description": "The unique identifier for the registration."
             }
           ]
         }

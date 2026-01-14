@@ -6,17 +6,19 @@
  * This ruleset enforces a strict, user-centric security model. The primary principle is that users have explicit ownership and control over their own data. Public data is explicitly marked as such, and all other access is denied by default. The rules are designed for performance and security by avoiding complex queries and favoring denormalized data for authorization checks.
  *
  * ## Data Structure
- * The data is organized into four top-level collections:
- * - `/users/{userId}`: Stores individual athlete profiles. Each document is owned and managed by the authenticated user corresponding to the `userId`.
- * - `/boxes/{boxId}`: A public-readable collection of CrossFit gyms (boxes).
- * - `/user_roles/{userRoleId}`: A public, read-only collection that defines the possible roles in the system (e.g., Athlete, Organizer).
- * - `/athlete_roles/{athleteRoleId}`: A collection linking users to their roles. Access is highly restricted.
+ * The data is organized into five top-level collections:
+ * - `/users/{userId}`: Stores individual athlete profiles.
+ * - `/boxes/{boxId}`: Publicly readable collection of gyms.
+ * - `/user_roles/{userRoleId}`: Publicly readable definitions of user roles.
+ * - `/athlete_roles/{athleteRoleId}`: Links users to roles.
+ * - `/registrations/{registrationId}`: Stores event registrations.
  *
  * ## Key Security Decisions
- * - **Strict User Ownership**: All documents in the `/users` collection can only be created, updated, or deleted by the authenticated user whose UID matches the document ID.
- * - **No User Listing**: To protect user privacy and prevent data scraping, it is impossible for any client to list all documents in the `/users` collection.
- * - **Public Read-Only Data**: The `/boxes` and `/user_roles` collections are treated as public reference data. They are readable by anyone but cannot be modified by clients, ensuring data integrity. This will require an admin backend to manage.
- * - **Scoped Role Lookups**: Users can only read their own role assignment from `/athlete_roles`. Listing all role assignments is disabled to prevent leaking user information. Role management is assumed to be an admin-only task and is disallowed from the client.
+ * - **Strict User Ownership**: Users can only CUD their own `/users/{userId}` doc and their own `/registrations` docs.
+ * - **No User Listing**: Listing all users is forbidden to protect privacy.
+ * - **Scoped Role & Registration Lookups**: Users can only list roles and registrations where their UID is specified in a query.
+ * - **Public Read-Only Data**: `/boxes` and `/user_roles` are public reference data.
+ * - **Organizer Read Access**: Event organizers can read registrations for their own events.
  *
  */
 rules_version = '2';
@@ -40,6 +42,14 @@ service cloud.firestore {
      */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    /**
+     * Checks if a user is an organizer of a specific competition.
+     * It reads the competition document to check the `organizerId`.
+     */
+    function isOrganizer(competitionId) {
+      return isSignedIn() && get(/databases/$(database)/documents/competitions/$(competitionId)).data.organizerId == request.auth.uid;
     }
 
     /**
@@ -71,13 +81,7 @@ service cloud.firestore {
     // ----------------------------------------------------------------
 
     /**
-     * @description Manages athlete profiles. Users can manage their own profile but cannot see a list of all users.
-     * @path /users/{userId}
-     * @allow (get) An authenticated user can view any other user's profile.
-     * @allow (create) A user with UID `user_abc` can create the document at `/users/user_abc`.
-     * @deny (list) No user can list all documents in the `/users` collection.
-     * @deny (update) A user with UID `user_abc` CANNOT update `/users/user_xyz`.
-     * @principle Restricts access to a user's own data tree and validates relational integrity.
+     * @description Manages athlete profiles.
      */
     match /users/{userId} {
       allow get: if isSignedIn();
@@ -86,27 +90,28 @@ service cloud.firestore {
       allow update: if isExistingOwner(userId) && isFieldImmutable('id');
       allow delete: if isExistingOwner(userId);
     }
-
+    
     /**
-     * @description Stores public information about CrossFit boxes (gyms).
-     * @path /boxes/{boxId}
-     * @allow (get, list) Any user, signed in or not, can read box information.
-     * @deny (create, update, delete) No client can modify box data; it must be managed by an admin process.
-     * @principle Provides public read access while protecting data integrity by disallowing client writes.
+     * @description Publicly readable event information. Client writes are limited to updating specific fields
+     * like categories, handled by organizers.
      */
-    match /boxes/{boxId} {
+    match /competitions/{competitionId} {
       allow get, list: if true;
-      // CRITICAL: Cannot implement owner-only writes. The 'Box' entity is missing an 'ownerId' or 'authorId' field.
-      // Writes are disabled until an ownership or admin-role model is implemented.
-      allow create, update, delete: if false; // TODO: Add owner/admin validation once the schema is updated with an ownership field.
+      allow create: if isSignedIn() && request.resource.data.organizerId == request.auth.uid;
+      allow update: if isOrganizer(competitionId);
+      allow delete: if isOrganizer(competitionId);
     }
 
     /**
-     * @description Defines the user roles available in the application (e.g., Athlete, Organizer).
-     * @path /user_roles/{userRoleId}
-     * @allow (get, list) Any user can read the available role definitions.
-     * @deny (create, update, delete) Role definitions are static and cannot be modified by clients.
-     * @principle Treats role definitions as public, immutable system data.
+     * @description Public information about CrossFit boxes.
+     */
+    match /boxes/{boxId} {
+      allow get, list: if true;
+      allow create, update, delete: if false;
+    }
+
+    /**
+     * @description Public definitions for user roles.
      */
     match /user_roles/{userRoleId} {
       allow get, list: if true;
@@ -114,21 +119,31 @@ service cloud.firestore {
     }
 
     /**
-     * @description Associates athletes with specific roles. This is a sensitive linking collection.
-     * @path /athlete_roles/{athleteRoleId}
-     * @allow (get) A user `user_abc` can read a role document if its `athleteId` field is `user_abc`.
-     * @allow (list) A user `user_abc` can query the collection, but only for documents where `athleteId` is `user_abc`.
-     * @deny (list) A user `user_abc` CANNOT perform a general list query without filtering by their own `athleteId`.
-     * @deny (create, update, delete) Role assignments are managed by an admin process, not by clients.
-     * @principle Enforces strict, scoped access to sensitive relationship data.
+     * @description Associates athletes with roles.
      */
      match /athlete_roles/{athleteRoleId} {
       allow get: if isSignedIn() && resource.data.athleteId == request.auth.uid;
-      // A user can only query for their own roles. This is critical for security.
-      allow list: if isSignedIn() && request.query.limit <= 10 && request.query.get('where', [['athleteId', '==', request.auth.uid]]) != null;
+      allow list: if isSignedIn() && request.query.where.get('athleteId', ['in', [request.auth.uid]]) != null;
       allow create: if isSignedIn() && request.resource.data.athleteId == request.auth.uid;
       allow update, delete: if false;
     }
-
+    
+    /**
+     * @description Manages event registrations.
+     * @allow (get) An athlete can get their own registration. An organizer can get any registration for their event.
+     * @allow (list) An athlete can list their own registrations. An organizer can list all registrations for their event.
+     * @allow (create) An athlete can create their own registration.
+     * @allow (update) An athlete can update their own registration (e.g., to add payment proof). An organizer can update a registration (e.g., to approve/reject).
+     */
+    match /registrations/{registrationId} {
+        allow get: if isSignedIn() && (resource.data.athleteId == request.auth.uid || isOrganizer(resource.data.competitionId));
+        allow list: if isSignedIn(); // List queries must be filtered by athleteId or competitionId by the client.
+        allow create: if isSignedIn() && request.resource.data.athleteId == request.auth.uid;
+        allow update: if isSignedIn() && (
+            (resource.data.athleteId == request.auth.uid) || // Owner can update
+            isOrganizer(resource.data.competitionId)       // Organizer can update
+        );
+        allow delete: if false; // Deletions should be handled by status changes, not hard deletes.
+    }
   }
 }

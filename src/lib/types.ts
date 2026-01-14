@@ -61,6 +61,7 @@ export type Registration = {
   paymentStatus: 'pending_payment' | 'pending_approval' | 'approved' | 'rejected';
   paymentProofUrl?: string;
   rejectionReason?: string;
+  registeredAt: Timestamp;
 };
 
 export type Workout = {

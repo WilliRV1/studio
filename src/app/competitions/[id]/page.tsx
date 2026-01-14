@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { useDoc, useFirestore, useMemoFirebase } from "@/firebase";
+import { useDoc, useFirestore, useMemoFirebase, useUser } from "@/firebase";
 import { doc } from "firebase/firestore";
 import type { Category, Competition } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ import { format } from "date-fns";
 import PartnerFinderClient from "./_components/partner-finder-client";
 import { leaderboardData } from "@/lib/data";
 import { Skeleton } from "@/components/ui/skeleton";
+import { RegistrationDialog } from "./_components/registration-dialog";
 
 
 function DetailPageSkeleton() {
@@ -57,6 +58,7 @@ function DetailPageSkeleton() {
 
 export default function CompetitionDetailPage({ params }: { params: { id: string } }) {
   const firestore = useFirestore();
+  const { user } = useUser();
 
   const competitionRef = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -149,7 +151,7 @@ export default function CompetitionDetailPage({ params }: { params: { id: string
                     <CardContent className="flex-grow space-y-3">
                         <div className="flex items-center text-2xl font-bold text-primary">
                             <DollarSign className="h-6 w-6 mr-2"/>
-                            {category.price}
+                            {category.price.toLocaleString('es-CO')}
                         </div>
                         <div className="flex items-center text-sm text-muted-foreground">
                             <Users className="h-4 w-4 mr-2"/>
@@ -157,9 +159,11 @@ export default function CompetitionDetailPage({ params }: { params: { id: string
                         </div>
                     </CardContent>
                     <div className="p-6 pt-0">
-                        <Button className="w-full font-bold" disabled={category.registeredCount >= category.spots}>
+                       <RegistrationDialog competition={competition} category={category} user={user}>
+                         <Button className="w-full font-bold" disabled={category.registeredCount >= category.spots || !user}>
                             {category.registeredCount >= category.spots ? 'Agotado' : 'Inscríbete Ahora'}
-                        </Button>
+                         </Button>
+                       </RegistrationDialog>
                     </div>
                     </Card>
                 ))}
