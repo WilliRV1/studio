@@ -1,4 +1,5 @@
 import type { SuggestPartnersInput } from "@/ai/flows/partner-finder-suggest-partners";
+import type { Timestamp } from "firebase/firestore";
 
 export type Athlete = {
   id: string;
@@ -37,17 +38,17 @@ export type Category = {
 export type Competition = {
   id: string;
   name: string;
-  logoUrl: string;
   bannerUrl: string;
   location: string;
-  startDate: string;
-  endDate: string;
-  registrationStartDate: string;
-  registrationEndDate: string;
+  startDate: Timestamp;
+  endDate: Timestamp;
+  registrationStartDate: Timestamp;
+  registrationEndDate: Timestamp;
   description: string;
   rulesUrl?: string;
   categories: Category[];
   organizerId: string;
+  createdAt: Timestamp;
 };
 
 export type Registration = {

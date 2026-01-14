@@ -1,11 +1,39 @@
+'use client';
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { CompetitionCard } from "@/components/competition-card";
-import { competitions } from "@/lib/data";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Trophy } from "lucide-react";
+import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
+import { collection, limit, orderBy, query } from "firebase/firestore";
+import type { Competition } from "@/lib/types";
+import { Skeleton } from "@/components/ui/skeleton";
+
+function FeaturedSkeleton() {
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="space-y-4">
+                    <Skeleton className="h-48 w-full" />
+                    <div className="space-y-2 p-2">
+                        <Skeleton className="h-6 w-3/4" />
+                        <Skeleton className="h-4 w-1/2" />
+                        <Skeleton className="h-4 w-1/2" />
+                    </div>
+                </div>
+            ))}
+      </div>
+    )
+}
 
 export default function Home() {
-  const featuredCompetitions = competitions.slice(0, 3);
+    const firestore = useFirestore();
+
+    const featuredCompetitionsRef = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(collection(firestore, 'competitions'), orderBy('createdAt', 'desc'), limit(3));
+    }, [firestore]);
+
+    const { data: featuredCompetitions, isLoading } = useCollection<Competition>(featuredCompetitionsRef);
 
   return (
     <div className="flex flex-col">
@@ -37,11 +65,24 @@ export default function Home() {
           <h2 className="font-headline text-3xl md:text-4xl font-bold text-center mb-10">
             Competencias Destacadas
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredCompetitions.map((comp) => (
-              <CompetitionCard key={comp.id} competition={comp} />
-            ))}
-          </div>
+          {isLoading ? (
+                <FeaturedSkeleton />
+           ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {featuredCompetitions?.map((comp) => (
+                    <CompetitionCard key={comp.id} competition={comp} />
+                    ))}
+                </div>
+           )}
+
+            {(!isLoading && featuredCompetitions?.length === 0) && (
+                <div className="text-center py-16 border-2 border-dashed rounded-lg">
+                    <Trophy className="mx-auto h-12 w-12 text-muted-foreground" />
+                    <h3 className="mt-4 text-xl font-semibold">Aún no hay competencias</h3>
+                    <p className="mt-2 text-muted-foreground">¡Vuelve pronto o sé el primero en organizar una!</p>
+                </div>
+            )}
+
           <div className="text-center mt-12">
             <Button asChild variant="outline">
               <Link href="/competitions">

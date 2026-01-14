@@ -1,4 +1,4 @@
-import type { Athlete, Competition, Registration, LeaderboardEntry } from './types';
+import type { Athlete, Registration, LeaderboardEntry } from './types';
 
 export const athletes: Athlete[] = [
   {
@@ -135,79 +135,6 @@ export const athletes: Athlete[] = [
   },
 ];
 
-export const competitions: Competition[] = [
-  {
-    id: 'comp-001',
-    name: 'The Titan Games',
-    logoUrl: '/logo-placeholder.svg',
-    bannerUrl: 'https://picsum.photos/seed/titan/1200/600',
-    location: 'Medellín, Colombia',
-    startDate: '2024-08-15',
-    endDate: '2024-08-17',
-    registrationStartDate: '2024-06-01',
-    registrationEndDate: '2024-07-31',
-    description: 'An epic test of strength and endurance. The Titan Games brings together the best athletes to compete for the title of Titan.',
-    rulesUrl: '/titan-games-rules.pdf',
-    organizerId: 'org-001',
-    categories: [
-      { id: 'cat-001', name: 'RX Pairs', type: 'Pairs', gender: 'Mixed', price: 150, spots: 50, registeredCount: 35, requiresPartner: true },
-      { id: 'cat-002', name: 'Intermediate Individual', type: 'Individual', gender: 'Male', price: 80, spots: 100, registeredCount: 90, requiresPartner: false },
-      { id: 'cat-003', name: 'Scaled Teams', type: 'Team', gender: 'Mixed', price: 280, spots: 30, registeredCount: 15, requiresPartner: true },
-    ],
-  },
-  {
-    id: 'comp-002',
-    name: 'Coastal Clash',
-    logoUrl: '/logo-placeholder.svg',
-    bannerUrl: 'https://picsum.photos/seed/coastal/1200/600',
-    location: 'Cartagena, Colombia',
-    startDate: '2024-09-20',
-    endDate: '2024-09-22',
-    registrationStartDate: '2024-07-01',
-    registrationEndDate: '2024-08-31',
-    description: 'Sun, sand, and suffering. A unique fitness competition on the beautiful beaches of Cartagena.',
-    rulesUrl: '/coastal-clash-rules.pdf',
-    organizerId: 'org-002',
-    categories: [
-      { id: 'cat-004', name: 'RX Individual', type: 'Individual', gender: 'Female', price: 90, spots: 50, registeredCount: 45, requiresPartner: false },
-      { id: 'cat-005', name: 'RX Pairs', type: 'Pairs', gender: 'Male', price: 160, spots: 40, registeredCount: 20, requiresPartner: true },
-      { id: 'cat-006', name: 'Intermediate Pairs', type: 'Pairs', gender: 'Mixed', price: 130, spots: 50, registeredCount: 50, requiresPartner: true },
-    ],
-  },
-  {
-    id: 'comp-003',
-    name: 'Urban Throwdown',
-    logoUrl: '/logo-placeholder.svg',
-    bannerUrl: 'https://picsum.photos/seed/urban/1200/600',
-    location: 'Bogotá, Colombia',
-    startDate: '2024-10-11',
-    endDate: '2024-10-13',
-    registrationStartDate: '2024-08-01',
-    registrationEndDate: '2024-09-30',
-    description: 'The concrete jungle is your arena. A fast-paced, high-intensity competition in the heart of Bogotá.',
-    organizerId: 'org-001',
-    categories: [
-      { id: 'cat-007', name: 'Elite Individual', type: 'Individual', gender: 'Male', price: 120, spots: 30, registeredCount: 28, requiresPartner: false },
-      { id: 'cat-008', name: 'RX Teams of 4', type: 'Team', gender: 'Mixed', price: 400, spots: 20, registeredCount: 19, requiresPartner: true },
-    ],
-  },
-  {
-    id: 'comp-004',
-    name: 'Mountain Mayhem',
-    logoUrl: '/logo-placeholder.svg',
-    bannerUrl: 'https://picsum.photos/seed/mountain/1200/600',
-    location: 'Manizales, Colombia',
-    startDate: '2024-11-01',
-    endDate: '2024-11-03',
-    registrationStartDate: '2024-09-01',
-    registrationEndDate: '2024-10-15',
-    description: 'Compete at altitude and conquer the mountains. A true test of grit.',
-    organizerId: 'org-003',
-    categories: [
-       { id: 'cat-009', name: 'RX Pairs', type: 'Pairs', gender: 'Female', price: 150, spots: 30, registeredCount: 10, requiresPartner: true },
-    ],
-  },
-];
 
 export const registrations: Registration[] = [
     {

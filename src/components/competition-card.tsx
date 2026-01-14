@@ -13,7 +13,9 @@ type CompetitionCardProps = {
 };
 
 export function CompetitionCard({ competition, className }: CompetitionCardProps) {
-  const isRegistrationOpen = new Date() >= new Date(competition.registrationStartDate) && new Date() <= new Date(competition.registrationEndDate);
+  const regStartDate = competition.registrationStartDate.toDate();
+  const regEndDate = competition.registrationEndDate.toDate();
+  const isRegistrationOpen = new Date() >= regStartDate && new Date() <= regEndDate;
 
   return (
     <Link href={`/competitions/${competition.id}`} className="group block">
@@ -39,7 +41,7 @@ export function CompetitionCard({ competition, className }: CompetitionCardProps
           <div className="space-y-2 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4" />
-              <span>{format(new Date(competition.startDate), 'LLL d, yyyy')}</span>
+              <span>{format(competition.startDate.toDate(), 'LLL d, yyyy')}</span>
             </div>
             <div className="flex items-center gap-2">
               <MapPin className="h-4 w-4" />
