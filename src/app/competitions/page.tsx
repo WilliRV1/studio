@@ -1,13 +1,15 @@
 'use client';
 
 import { useState, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { CompetitionCard } from "@/components/competition-card";
-import { Input } from "@/components/ui/input";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection, orderBy, query } from "firebase/firestore";
 import type { Competition } from "@/lib/types";
-import { Search } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { addDays, isWithinInterval } from "date-fns";
+import { FiltersBar, type FiltersState } from "./_components/filters-bar";
+import { AnimatePresence, motion } from "framer-motion";
 
 function CompetitionsLoadingSkeleton() {
     return (
@@ -27,8 +29,16 @@ function CompetitionsLoadingSkeleton() {
 }
 
 export default function CompetitionsPage() {
-  const [searchTerm, setSearchTerm] = useState('');
   const firestore = useFirestore();
+  const searchParams = useSearchParams();
+
+  const [filters, setFilters] = useState<FiltersState>({
+    search: searchParams.get('search') || '',
+    department: searchParams.get('department') || '',
+    city: searchParams.get('city') || '',
+    dateRange: searchParams.get('dateRange') || 'all',
+    sortBy: searchParams.get('sortBy') || 'date-asc',
+  });
 
   const competitionsRef = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -37,13 +47,59 @@ export default function CompetitionsPage() {
 
   const { data: competitions, isLoading } = useCollection<Competition>(competitionsRef);
 
-  const filteredCompetitions = useMemo(() => {
+  const filteredAndSortedCompetitions = useMemo(() => {
     if (!competitions) return [];
-    return competitions.filter(comp => 
-        comp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        comp.location.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [competitions, searchTerm]);
+    
+    let result = competitions;
+
+    // 1. Filter by search term
+    if (filters.search) {
+      result = result.filter(comp => 
+        comp.name.toLowerCase().includes(filters.search.toLowerCase()) ||
+        comp.location.toLowerCase().includes(filters.search.toLowerCase())
+      );
+    }
+    
+    // 2. Filter by location
+    if (filters.department) {
+        result = result.filter(c => c.location.includes(filters.department));
+    }
+    if (filters.city) {
+        result = result.filter(c => c.location.includes(filters.city));
+    }
+
+    // 3. Filter by date range
+    const now = new Date();
+    if (filters.dateRange === 'week') {
+        const nextWeek = addDays(now, 7);
+        result = result.filter(c => isWithinInterval(c.startDate.toDate(), { start: now, end: nextWeek }));
+    } else if (filters.dateRange === 'month') {
+        const nextMonth = addDays(now, 30);
+        result = result.filter(c => isWithinInterval(c.startDate.toDate(), { start: now, end: nextMonth }));
+    }
+
+    // 4. Sort results
+    switch(filters.sortBy) {
+        case 'date-desc':
+            result.sort((a, b) => b.startDate.seconds - a.startDate.seconds);
+            break;
+        case 'price-asc':
+            // Assumes lowest category price. If no categories, put it last.
+            result.sort((a, b) => {
+                const priceA = a.categories?.length ? Math.min(...a.categories.map(cat => cat.price)) : Infinity;
+                const priceB = b.categories?.length ? Math.min(...b.categories.map(cat => cat.price)) : Infinity;
+                return priceA - priceB;
+            });
+            break;
+        case 'date-asc':
+        default:
+            // The default query from firebase is already sorted by date ascending
+            break;
+    }
+
+    return result;
+
+  }, [competitions, filters]);
 
 
   return (
@@ -57,31 +113,43 @@ export default function CompetitionsPage() {
         </p>
       </div>
       
-      <div className="mb-8 max-w-lg mx-auto">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-          <Input 
-            placeholder="Buscar por competencia o ubicación..." 
-            className="pl-10 h-12 text-base"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
+      <div className="mb-8">
+        <FiltersBar filters={filters} setFilters={setFilters} />
       </div>
+
+      <div className="text-sm text-muted-foreground mb-6">
+        {isLoading ? (
+             <Skeleton className="h-4 w-32" />
+        ) : (
+            <p>
+                <strong>{filteredAndSortedCompetitions.length}</strong> {filteredAndSortedCompetitions.length === 1 ? 'resultado encontrado' : 'resultados encontrados'}.
+            </p>
+        )}
+      </div>
+
 
        {isLoading ? (
             <CompetitionsLoadingSkeleton />
-        ) : filteredCompetitions.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {filteredCompetitions.map((comp) => (
-                <CompetitionCard key={comp.id} competition={comp} />
-                ))}
-            </div>
         ) : (
-            <div className="text-center py-16 border-2 border-dashed rounded-lg">
-                <h3 className="text-xl font-semibold mb-2">No se encontraron competencias</h3>
-                <p className="text-muted-foreground">Intenta con otra búsqueda o revisa más tarde.</p>
-            </div>
+            <AnimatePresence>
+                {filteredAndSortedCompetitions.length > 0 ? (
+                    <motion.div 
+                        layout 
+                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+                    >
+                        {filteredAndSortedCompetitions.map((comp) => (
+                          <motion.div layout animate={{ opacity: 1 }} initial={{ opacity: 0 }} exit={{ opacity: 0 }} key={comp.id}>
+                            <CompetitionCard competition={comp} />
+                           </motion.div>
+                        ))}
+                    </motion.div>
+                ) : (
+                    <div className="text-center py-16 border-2 border-dashed rounded-lg">
+                        <h3 className="text-xl font-semibold mb-2">No se encontraron competencias</h3>
+                        <p className="text-muted-foreground">Intenta con otros filtros o revisa más tarde.</p>
+                    </div>
+                )}
+            </AnimatePresence>
         )}
 
     </div>
