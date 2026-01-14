@@ -90,9 +90,10 @@ export type LeaderboardEntry = {
   profilePictureUrl: string;
   totalPoints: number;
   rank: number;
+  categoryId: string; // Add categoryId to filter leaderboard
   scores: {
     [wodId: string]: {
-      result: number;
+      result: number | string; // result can be time (string) or reps (number)
       points: number;
       rank: number;
     }
@@ -101,5 +102,3 @@ export type LeaderboardEntry = {
 
 
 export type AIRequest = SuggestPartnersInput;
-
-    

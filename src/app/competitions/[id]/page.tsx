@@ -4,19 +4,18 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { useDoc, useFirestore, useMemoFirebase, useUser, useCollection } from "@/firebase";
-import { doc, collection, query, where, orderBy } from "firebase/firestore";
-import type { Category, Competition, Registration, LeaderboardEntry } from "@/lib/types";
+import { doc, collection, query, where } from "firebase/firestore";
+import type { Category, Competition, Registration } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Calendar, MapPin, Users, DollarSign, FileText, BarChart2, Search, Trophy, Lock } from "lucide-react";
 import { format } from "date-fns";
 import PartnerFinderClient from "./_components/partner-finder-client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RegistrationDialog } from "./_components/registration-dialog";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import LeaderboardClient from "./_components/leaderboard-client";
 
 
 function DetailPageSkeleton() {
@@ -79,14 +78,6 @@ export default function CompetitionDetailPage({ params }: { params: { id: string
   const { data: userRegistrations } = useCollection<Registration>(userRegistrationRef);
   const userRegistration = userRegistrations?.[0];
   const isPaymentApproved = userRegistration?.paymentStatus === 'approved';
-
-  const leaderboardRef = useMemoFirebase(() => {
-    if (!firestore || !params.id) return null;
-    return query(collection(firestore, 'competitions', params.id, 'leaderboard'), orderBy('rank', 'asc'));
-  }, [firestore, params.id]);
-
-  const { data: leaderboardData, isLoading: isLoadingLeaderboard } = useCollection<LeaderboardEntry>(leaderboardRef);
-
 
   if (isLoading || isUserLoading) {
     return <DetailPageSkeleton />;
@@ -216,53 +207,7 @@ export default function CompetitionDetailPage({ params }: { params: { id: string
 
           <TabsContent value="leaderboard">
             {isPaymentApproved || !user ? (
-              <Card>
-                  <CardHeader>
-                    <CardTitle className="font-headline">Leaderboard en Vivo</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {isLoadingLeaderboard ? (
-                      <div className="space-y-2">
-                        <Skeleton className="h-10 w-full" />
-                        <Skeleton className="h-10 w-full" />
-                        <Skeleton className="h-10 w-full" />
-                      </div>
-                    ) : leaderboardData && leaderboardData.length > 0 ? (
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="w-[80px]">Puesto</TableHead>
-                            <TableHead>Atleta</TableHead>
-                            <TableHead className="text-right">Puntos Totales</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {leaderboardData.map((entry) => (
-                            <TableRow key={entry.id}>
-                              <TableCell className="font-bold text-lg">{entry.rank}</TableCell>
-                              <TableCell>
-                                <div className="flex items-center gap-3">
-                                    <Avatar className="h-8 w-8">
-                                        <AvatarImage src={entry.profilePictureUrl} alt={entry.athleteName} />
-                                        <AvatarFallback>{entry.athleteName?.charAt(0)}</AvatarFallback>
-                                    </Avatar>
-                                    <span className="font-medium">{entry.athleteName}</span>
-                                </div>
-                              </TableCell>
-                              <TableCell className="text-right font-bold text-primary">{entry.totalPoints}</TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    ) : (
-                       <div className="text-center py-12 border-2 border-dashed rounded-lg">
-                          <BarChart2 className="mx-auto h-12 w-12 text-muted-foreground" />
-                          <h3 className="mt-4 text-xl font-semibold">El Leaderboard está vacío</h3>
-                          <p className="mt-2 text-muted-foreground">Los resultados aparecerán aquí en tiempo real una vez que comience la competencia.</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                <LeaderboardClient competition={competition} user={user} />
             ) : (
                 <Card className="text-center py-12">
                   <CardHeader>
@@ -283,5 +228,3 @@ export default function CompetitionDetailPage({ params }: { params: { id: string
     </div>
   );
 }
-
-    
