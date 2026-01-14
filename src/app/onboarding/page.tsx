@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import { useUser, useFirestore } from '@/firebase';
+import { useUser, useFirestore, setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
 import { doc, collection } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
@@ -22,7 +22,6 @@ import { LocationStep } from '@/components/onboarding/location-step';
 import { AthleteInfoStep } from '@/components/onboarding/athlete-info-step';
 import { ProfilePictureStep } from '@/components/onboarding/profile-picture-step';
 import { Loader2 } from 'lucide-react';
-import { setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
 
 const onboardingSchema = z.object({
   // Personal Info
