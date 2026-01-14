@@ -25,6 +25,7 @@ import { collection, serverTimestamp } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import type { Competition, Category } from '@/lib/types';
 import type { User } from 'firebase/auth';
+import { sendRegistrationConfirmationEmail } from '@/app/actions/email';
 
 const registrationSchema = z.object({
   tshirtSize: z.enum(['S', 'M', 'L', 'XL'], { required_error: 'Debes seleccionar una talla.' }),
@@ -54,8 +55,8 @@ export function RegistrationDialog({ competition, category, user, children }: Re
   });
 
   const onSubmit = async (data: RegistrationFormValues) => {
-    if (!user) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Debes iniciar sesión.' });
+    if (!user || !user.displayName || !user.email) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Debes iniciar sesión y tener un perfil completo.' });
         return;
     }
     
@@ -76,9 +77,18 @@ export function RegistrationDialog({ competition, category, user, children }: Re
 
         await addDocumentNonBlocking(registrationsRef, registrationData);
         
+        // Send confirmation email
+        await sendRegistrationConfirmationEmail({
+          athleteEmail: user.email,
+          athleteName: user.displayName,
+          competition,
+          category,
+          teamName: data.teamName,
+        });
+
         toast({
             title: '¡Pre-registro exitoso!',
-            description: 'Tu cupo está reservado. Completa el pago para confirmar.',
+            description: 'Tu cupo está reservado. Revisa tu email para ver las instrucciones de pago.',
         });
         
         setIsOpen(false);

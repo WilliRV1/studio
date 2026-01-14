@@ -1,6 +1,6 @@
 'use client';
 
-import type { Registration, Athlete, Category } from "@/lib/types";
+import type { Registration, Athlete, Category, Competition } from "@/lib/types";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,7 @@ interface RegistrationRowProps {
     registration: Registration;
     athlete?: Athlete;
     category?: Category;
+    competition?: Competition;
 }
 
 const getStatusBadgeVariant = (status: Registration['paymentStatus']) => {
@@ -37,7 +38,7 @@ const getStatusText = (status: Registration['paymentStatus']) => {
     }
 }
 
-export function RegistrationRow({ registration, athlete, category }: RegistrationRowProps) {
+export function RegistrationRow({ registration, athlete, category, competition }: RegistrationRowProps) {
     
     if (!athlete || !category) {
         // You can render a loading state or null
@@ -74,7 +75,12 @@ export function RegistrationRow({ registration, athlete, category }: Registratio
                 </Badge>
             </TableCell>
             <TableCell className="text-right">
-                <ReviewRegistrationDialog registration={registration} athlete={athlete} />
+                <ReviewRegistrationDialog 
+                    registration={registration} 
+                    athlete={athlete} 
+                    competition={competition}
+                    category={category}
+                />
             </TableCell>
         </TableRow>
     )

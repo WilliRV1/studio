@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { Registration, Athlete } from '@/lib/types';
+import type { Registration, Athlete, Competition, Category } from '@/lib/types';
 import {
   Dialog,
   DialogContent,
@@ -15,19 +15,23 @@ import {
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { doc } from 'firebase/firestore';
-import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
+import { useFirestore, updateDocumentNonBlocking, useCollection } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Check, X, Loader2, ExternalLink } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
+import { sendPaymentApprovedEmail, sendPaymentRejectedEmail } from '@/app/actions/email';
+
 
 interface ReviewRegistrationDialogProps {
   registration: Registration;
   athlete: Athlete;
+  competition?: Competition;
+  category?: Category;
 }
 
-export function ReviewRegistrationDialog({ registration, athlete }: ReviewRegistrationDialogProps) {
+export function ReviewRegistrationDialog({ registration, athlete, competition, category }: ReviewRegistrationDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
@@ -36,7 +40,7 @@ export function ReviewRegistrationDialog({ registration, athlete }: ReviewRegist
   const firestore = useFirestore();
   const { toast } = useToast();
 
-  const handleUpdateStatus = (status: 'approved' | 'rejected') => {
+  const handleUpdateStatus = async (status: 'approved' | 'rejected') => {
     if (status === 'rejected' && !rejectionReason) {
       toast({ variant: 'destructive', title: 'Error', description: 'Debes proporcionar un motivo de rechazo.' });
       return;
@@ -48,13 +52,32 @@ export function ReviewRegistrationDialog({ registration, athlete }: ReviewRegist
     const updateData: { paymentStatus: string; rejectionReason?: string } = {
         paymentStatus: status,
     };
-
+    
     if (status === 'rejected') {
         updateData.rejectionReason = rejectionReason;
     }
 
     try {
-        updateDocumentNonBlocking(registrationRef, updateData);
+        await updateDocumentNonBlocking(registrationRef, updateData);
+
+        // Send notification email
+        if (status === 'approved') {
+          await sendPaymentApprovedEmail({
+            athleteEmail: athlete.email,
+            athleteName: `${athlete.firstName} ${athlete.lastName}`,
+            competitionName: competition?.name || 'la competencia',
+            categoryName: category?.name || 'la categoría',
+          });
+        } else {
+          await sendPaymentRejectedEmail({
+            athleteEmail: athlete.email,
+            athleteName: `${athlete.firstName} ${athlete.lastName}`,
+            competitionName: competition?.name || 'la competencia',
+            categoryName: category?.name || 'la categoría',
+            rejectionReason: rejectionReason,
+          });
+        }
+
         toast({ title: 'Actualizado', description: `La inscripción ha sido ${status === 'approved' ? 'aprobada' : 'rechazada'}.` });
         setIsOpen(false);
         setShowRejectionForm(false);
@@ -98,6 +121,7 @@ export function ReviewRegistrationDialog({ registration, athlete }: ReviewRegist
                     </div>
                 </div>
                 <div className="text-sm space-y-1">
+                    <p><span className="font-semibold">Categoría:</span> {category?.name || 'N/A'}</p>
                     <p><span className="font-semibold">Equipo:</span> {registration.teamName || 'N/A'}</p>
                     <p><span className="font-semibold">Talla Camiseta:</span> {registration.tshirtSize}</p>
                 </div>

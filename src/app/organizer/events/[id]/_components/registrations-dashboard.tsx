@@ -89,6 +89,7 @@ export function RegistrationsDashboard({ competition }: RegistrationsDashboardPr
                                 registration={reg}
                                 athlete={athlete}
                                 category={category}
+                                competition={competition}
                             />
                         )
                     })}
