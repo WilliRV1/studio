@@ -125,6 +125,15 @@ export default function OnboardingPage() {
           profilePictureUrl,
       };
 
+      // Remove undefined fields before sending to Firestore
+      Object.keys(finalProfileData).forEach(key => {
+        const typedKey = key as keyof typeof finalProfileData;
+        if (finalProfileData[typedKey] === undefined) {
+          delete finalProfileData[typedKey];
+        }
+      });
+
+
       setDocumentNonBlocking(userProfileRef, finalProfileData, { merge: true });
 
       // Assign default "Athlete" role
