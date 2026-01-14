@@ -2,12 +2,13 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useDoc, useFirestore, useMemoFirebase, useUser, useCollection } from "@/firebase";
-import { doc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
-import type { Competition, Category, Workout } from "@/lib/types";
+import { doc, updateDoc, arrayUnion, arrayRemove, collection, query, where } from "firebase/firestore";
+import type { Competition, Category, Workout, Registration, Athlete } from "@/lib/types";
 import { z } from "zod";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { v4 as uuidv4 } from 'uuid';
+import * as XLSX from 'xlsx';
 
 
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,7 +16,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
-import { Calendar, DollarSign, Edit, MapPin, PlusCircle, Trash2, Users, Dumbbell, BarChart2 } from "lucide-react";
+import { Calendar, DollarSign, Edit, MapPin, PlusCircle, Trash2, Users, Dumbbell, BarChart2, TrendingUp, CheckCircle, FileDown } from "lucide-react";
 import { format } from "date-fns";
 import {
   Dialog,
@@ -38,7 +39,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -47,6 +48,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ResultsDashboard } from "./_components/results-dashboard";
+import { CategoryDistributionChart } from "./_components/category-distribution-chart";
+import { getStatusText } from "./_components/registration-row";
 
 
 const categorySchema = z.object({
@@ -107,6 +110,9 @@ function EventManagementSkeleton() {
     )
 }
 
+const CHART_COLORS = ["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))"];
+
+
 export default function EventManagementPage() {
     const { id } = useParams() as { id: string };
     const { user } = useUser();
@@ -123,6 +129,22 @@ export default function EventManagementPage() {
     }, [firestore, id]);
 
     const { data: competition, isLoading, error } = useDoc<Competition>(competitionRef);
+    
+    // Registrations and Athletes for the dashboard
+    const registrationsRef = useMemoFirebase(() => {
+        if (!firestore || !id) return null;
+        return query(collection(firestore, 'registrations'), where('competitionId', '==', id));
+    }, [firestore, id]);
+    const { data: registrations } = useCollection<Registration>(registrationsRef);
+
+    const athletesRef = useMemoFirebase(() => {
+        const athleteIds = registrations?.map(r => r.athleteId);
+        if (!firestore || !athleteIds || athleteIds.length === 0) return null;
+        // Firestore 'in' queries are limited to 30 elements. For more, you'd need multiple queries.
+        return query(collection(firestore, 'users'), where('id', 'in', athleteIds.slice(0, 30)));
+    }, [firestore, registrations]);
+    const { data: athletes } = useCollection<Athlete>(athletesRef);
+
 
     const categoryMethods = useForm<CategoryFormValues>({
         resolver: zodResolver(categorySchema),
@@ -199,6 +221,69 @@ export default function EventManagementPage() {
             toast({ variant: 'destructive', title: "Error", description: "No se pudo eliminar el elemento." });
         }
     }
+    
+    const dashboardStats = useMemo(() => {
+        if (!registrations || !competition) {
+            return {
+                approvedRegistrations: 0,
+                projectedIncome: 0,
+                pendingApproval: 0,
+                categoryDistribution: []
+            };
+        }
+
+        const approved = registrations.filter(r => r.paymentStatus === 'approved');
+        const pending = registrations.filter(r => r.paymentStatus === 'pending_approval');
+        
+        const income = approved.reduce((acc, reg) => {
+            const category = competition.categories.find(c => c.id === reg.categoryId);
+            return acc + (category?.price || 0);
+        }, 0);
+        
+        const distribution = competition.categories.map((cat, index) => {
+            const athleteCount = approved.filter(reg => reg.categoryId === cat.id).length;
+            return {
+                category: cat.name,
+                athletes: athleteCount,
+                fill: CHART_COLORS[index % CHART_COLORS.length]
+            };
+        }).filter(d => d.athletes > 0);
+
+
+        return {
+            approvedRegistrations: approved.length,
+            projectedIncome: income,
+            pendingApproval: pending.length,
+            categoryDistribution: distribution
+        };
+
+    }, [registrations, competition]);
+    
+    const exportToExcel = () => {
+      if (!registrations || !athletes || !competition) {
+          toast({ variant: 'destructive', title: 'Error', description: 'Datos no disponibles para exportar.' });
+          return;
+      }
+      
+      const data = registrations.map(reg => {
+        const athlete = athletes?.find(a => a.id === reg.athleteId);
+        const category = competition.categories.find(c => c.id === reg.categoryId);
+        
+        return {
+          'Nombre Completo': athlete ? `${athlete.firstName} ${athlete.lastName}` : 'N/A',
+          'Email': athlete?.email || 'N/A',
+          'Categoría': category?.name || 'N/A',
+          'Estado de Pago': getStatusText(reg.paymentStatus),
+          'Talla Camiseta': reg.tshirtSize,
+          'Nombre de Equipo': reg.teamName || 'N/A'
+        };
+      });
+      
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Inscritos');
+      XLSX.writeFile(wb, `${competition.name}-inscritos.xlsx`);
+    };
 
 
     if (isLoading) {
@@ -226,15 +311,72 @@ export default function EventManagementPage() {
                 <div className="absolute inset-0 bg-black/50" />
             </div>
              <div className="container mx-auto px-4 py-8 md:py-12 -mt-24 space-y-8">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="font-headline text-3xl">{competition.name}</CardTitle>
-                         <CardDescription className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-2">
-                            <span className="flex items-center gap-2"><Calendar className="h-4 w-4" />{format(competition.startDate.toDate(), 'MMMM d, yyyy')}</span>
-                            <span className="flex items-center gap-2"><MapPin className="h-4 w-4" />{competition.location}</span>
-                        </CardDescription>
-                    </CardHeader>
-                </Card>
+                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                    <Card className="lg:col-span-2">
+                        <CardHeader>
+                            <CardTitle className="font-headline text-3xl">{competition.name}</CardTitle>
+                            <CardDescription className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-2">
+                                <span className="flex items-center gap-2"><Calendar className="h-4 w-4" />{format(competition.startDate.toDate(), 'MMMM d, yyyy')}</span>
+                                <span className="flex items-center gap-2"><MapPin className="h-4 w-4" />{competition.location}</span>
+                            </CardDescription>
+                        </CardHeader>
+                    </Card>
+                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-6">
+                        <Card>
+                            <CardHeader className="pb-2">
+                                <CardTitle className="font-headline text-lg">Dashboard General</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <Button className="w-full" onClick={exportToExcel} disabled={!registrations || registrations.length === 0}>
+                                    <FileDown className="mr-2 h-4 w-4"/>
+                                    Exportar Inscritos
+                                </Button>
+                            </CardContent>
+                        </Card>
+                     </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Ingresos Totales</CardTitle>
+                            <DollarSign className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">
+                                {dashboardStats.projectedIncome.toLocaleString('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 })}
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Inscritos Aprobados</CardTitle>
+                            <Users className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">
+                                +{dashboardStats.approvedRegistrations}
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Pagos por Aprobar</CardTitle>
+                            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">
+                                {dashboardStats.pendingApproval}
+                            </div>
+                        </CardContent>
+                    </Card>
+                    {dashboardStats.categoryDistribution.length > 0 && (
+                        <div className="md:col-span-2 lg:col-span-1 lg:row-span-2">
+                            <CategoryDistributionChart data={dashboardStats.categoryDistribution} />
+                        </div>
+                    )}
+                </div>
+
 
                 <Tabs defaultValue="registrations">
                     <TabsList className="mb-6 grid w-full grid-cols-4">
@@ -470,5 +612,3 @@ export default function EventManagementPage() {
         </div>
     )
 }
-
-    
