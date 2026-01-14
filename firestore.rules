@@ -124,8 +124,9 @@ service cloud.firestore {
      */
     match /athlete_roles/{athleteRoleId} {
       allow get: if isSignedIn() && resource.data.athleteId == request.auth.uid;
-      allow list: if isSignedIn() && request.query.where.athleteId == request.auth.uid;
-      allow create, update, delete: if false;
+      allow list: if isSignedIn() && request.query.get('where').athleteId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.athleteId == request.auth.uid;
+      allow update, delete: if false;
     }
 
   }

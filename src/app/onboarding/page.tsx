@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { useUser, useFirestore } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { doc, collection } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 
@@ -140,7 +140,7 @@ export default function OnboardingPage() {
 
     // Assign default "Athlete" role
     const athleteRoleRef = collection(firestore, 'athlete_roles');
-    addDocumentNonBlocking(athleteRolef, {
+    addDocumentNonBlocking(athleteRoleRef, {
       athleteId: user.uid,
       roleId: 'role-athlete' // Hardcoded ID for 'Athlete' role
     });
