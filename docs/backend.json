@@ -69,8 +69,31 @@
           "description": "URL of the athlete's profile picture."
         },
         "personalRecords": {
-          "type": "string",
-          "description": "Personal Records of the athlete"
+          "type": "array",
+          "description": "An array of the athlete's personal records.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "The unique identifier for the PR category (e.g., 'snatch')."
+              },
+              "value": {
+                "type": "number",
+                "description": "The recorded value (weight in kg or time in seconds)."
+              },
+              "date": {
+                "type": "string",
+                "format": "date-time",
+                "description": "The date the PR was achieved."
+              },
+              "notes": {
+                "type": "string",
+                "description": "Optional notes about the PR."
+              }
+            },
+            "required": ["id", "value", "date"]
+          }
         }
       },
       "required": [
@@ -410,5 +433,3 @@
     "reasoning": "This Firestore structure prioritizes authorization independence and QAPs. User profiles and related data are stored under the `/users/{userId}` path, ensuring clear ownership. The `Athlete` entity includes all necessary information for the athlete profile. The `Box` entity contains details about CrossFit boxes. Roles are managed through the `athlete_roles` collection, associating athletes with roles (Athlete, Organizer, Administrator). This denormalized approach removes the need for complex `get()` calls in security rules. By storing all athlete data, box affiliation and social information in the athlete profile, access can be managed efficiently, and rules are simplified.\n\nQAPs are addressed by storing each entity in its dedicated collection with uniform security posture, ensuring secure `list` operations. Authorization Independence is ensured by denormalizing data. For example the `boxAffiliationId` attribute is stored directly within the `/users/{userId}/athlete/{athleteId}` document. In a collaborative scenario, such as events or teams, denormalizing the membership map into each document would provide the authorization context needed for rules and atomic batch operations."
   }
 }
-
-    

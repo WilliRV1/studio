@@ -1,19 +1,34 @@
 'use client';
 
-import { useUser, useFirestore, useMemoFirebase, useDoc, useCollection, addDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, useMemoFirebase, useDoc, useCollection, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { doc, collection, query, where } from 'firebase/firestore';
-
-import type { Athlete, Registration, Competition } from '@/lib/types';
+import { useState } from 'react';
+import type { Athlete, Registration, Competition, PersonalRecord } from '@/lib/types';
+import { getPrCategoryById, formatPrValue } from '@/lib/pr-data';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Edit, Instagram, Mail, Phone, MapPin, BarChart2, PlusCircle, Trophy, Briefcase } from 'lucide-react';
+import { Edit, Instagram, Mail, Phone, MapPin, BarChart2, PlusCircle, Trophy, Briefcase, Trash2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { RegistrationManagementDialog } from '@/components/registration-management-dialog';
+import { PrManagementDialog } from '@/components/pr-management-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const getStatusBadgeVariant = (status: Registration['paymentStatus']) => {
   switch (status) {
@@ -94,6 +109,9 @@ export default function DashboardPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
 
+  const [isPrDialogOpen, setIsPrDialogOpen] = useState(false);
+  const [selectedPr, setSelectedPr] = useState<PersonalRecord | null>(null);
+
   const userDocRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return doc(firestore, 'users', user.uid);
@@ -116,9 +134,6 @@ export default function DashboardPage() {
   const { data: userRoles } = useCollection(userRolesRef);
   const hasOrganizerRole = userRoles?.some(role => role.roleId === 'role-organizer' || role.roleId === 'role-admin');
 
-
-  // We fetch all competitions to easily look up names.
-  // For a larger scale app, this might be optimized.
   const competitionsRef = useMemoFirebase(() => {
     if(!firestore) return null;
     return collection(firestore, 'competitions');
@@ -146,6 +161,53 @@ export default function DashboardPage() {
       });
   };
 
+  const handleOpenPrDialog = (pr: PersonalRecord | null = null) => {
+    setSelectedPr(pr);
+    setIsPrDialogOpen(true);
+  };
+
+  const handlePrSubmit = async (data: PersonalRecord) => {
+    if (!userDocRef || !athlete) return;
+    
+    const existingPrs = athlete.personalRecords || [];
+    let updatedPrs;
+
+    if (existingPrs.some(pr => pr.id === data.id)) {
+        // Edit existing PR
+        updatedPrs = existingPrs.map(pr => pr.id === data.id ? data : pr);
+    } else {
+        // Add new PR
+        updatedPrs = [...existingPrs, data];
+    }
+    
+    try {
+        updateDocumentNonBlocking(userDocRef, { personalRecords: updatedPrs });
+        toast({
+            title: `¡Récord ${selectedPr ? 'actualizado' : 'añadido'}!`,
+            description: `Tu PR de ${getPrCategoryById(data.id)?.name} ha sido guardado.`,
+        });
+    } catch(err) {
+        console.error(err);
+        toast({ variant: 'destructive', title: 'Error', description: 'No se pudo guardar el récord.' });
+    }
+  }
+
+  const handleDeletePr = async (prId: string) => {
+    if (!userDocRef || !athlete) return;
+
+    const updatedPrs = (athlete.personalRecords || []).filter(pr => pr.id !== prId);
+    
+    try {
+        updateDocumentNonBlocking(userDocRef, { personalRecords: updatedPrs });
+        toast({
+            title: 'Récord eliminado',
+        });
+    } catch(err) {
+        console.error(err);
+        toast({ variant: 'destructive', title: 'Error', description: 'No se pudo eliminar el récord.' });
+    }
+  }
+
 
   if (isUserLoading || isAthleteLoading || areRegistrationsLoading) {
     return (
@@ -156,22 +218,20 @@ export default function DashboardPage() {
   }
 
   if (!athlete) {
-    // This case should be handled by the redirect in client-provider, but it's good practice
     return (
         <div className="container mx-auto py-8 md:py-12 text-center">
             <p>Perfil no encontrado. Completando el onboarding...</p>
         </div>
     );
   }
-  
-  const personalRecords = athlete.personalRecords && typeof athlete.personalRecords === 'object' 
-    ? Object.entries(athlete.personalRecords)
+
+  const sortedPrs = athlete.personalRecords 
+    ? [...athlete.personalRecords].sort((a, b) => b.date.toMillis() - a.date.toMillis())
     : [];
 
   return (
     <div className="container mx-auto py-8 md:py-12">
       <div className="grid gap-8 lg:grid-cols-3">
-        {/* Profile Card */}
         <div className="lg:col-span-1 space-y-8">
           <Card>
             <CardHeader className="text-center items-center relative">
@@ -226,24 +286,57 @@ export default function DashboardPage() {
                         <Trophy className="h-5 w-5 text-primary"/>
                         <CardTitle className="font-headline text-xl">Records Personales</CardTitle>
                     </div>
-                    <Button variant="ghost" size="icon">
+                    <Button variant="ghost" size="icon" onClick={() => handleOpenPrDialog()}>
                         <PlusCircle className="h-5 w-5" />
                     </Button>
                 </CardHeader>
                 <CardContent>
-                    {personalRecords.length > 0 ? (
-                         <div className="grid grid-cols-2 gap-4 text-sm">
-                            {personalRecords.map(([key, value]) => (
-                                <div key={key} className="flex justify-between border-b pb-2">
-                                    <span className="text-muted-foreground capitalize">{key.replace(/([A-Z])/g, ' $1')}</span>
-                                    <span className="font-semibold">{value}</span>
+                    {sortedPrs.length > 0 ? (
+                         <div className="space-y-3">
+                            {sortedPrs.map((pr) => {
+                                const category = getPrCategoryById(pr.id);
+                                if (!category) return null;
+                                return (
+                                <div key={pr.id} className="group flex justify-between items-center text-sm p-2 -m-2 rounded-md hover:bg-muted/50">
+                                    <div>
+                                        <p className="font-semibold">{category.name}</p>
+                                        <p className="text-xs text-muted-foreground">{format(pr.date.toDate(), "d 'de' LLL, yyyy", { locale: es })}</p>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="font-bold text-base text-primary tabular-nums">{formatPrValue(pr.value, category.unit)}</span>
+                                        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center">
+                                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleOpenPrDialog(pr)}>
+                                                <Edit className="h-4 w-4"/>
+                                            </Button>
+                                            <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive">
+                                                        <Trash2 className="h-4 w-4"/>
+                                                    </Button>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                        <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                                                        <AlertDialogDescription>
+                                                            Esta acción no se puede deshacer. Se eliminará tu récord de {category.name}.
+                                                        </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                        <AlertDialogAction onClick={() => handleDeletePr(pr.id)}>Eliminar</AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
+                                        </div>
+                                    </div>
                                 </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     ): (
                         <div className="text-center py-6 border-2 border-dashed rounded-lg">
                             <p className="text-muted-foreground mb-3">No has registrado PRs todavía.</p>
-                            <Button variant="outline" size="sm">
+                            <Button variant="outline" size="sm" onClick={() => handleOpenPrDialog()}>
                                 <PlusCircle className="mr-2 h-4 w-4" />
                                 Añadir PR
                             </Button>
@@ -251,6 +344,13 @@ export default function DashboardPage() {
                     )}
                 </CardContent>
             </Card>
+
+             <PrManagementDialog 
+                isOpen={isPrDialogOpen}
+                setIsOpen={setIsPrDialogOpen}
+                onSubmit={handlePrSubmit}
+                existingPr={selectedPr}
+             />
 
         </div>
 

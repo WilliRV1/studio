@@ -1,6 +1,13 @@
 import type { SuggestPartnersInput } from "@/ai/flows/partner-finder-suggest-partners";
 import type { Timestamp } from "firebase/firestore";
 
+export type PersonalRecord = {
+  id: string; // e.g., 'snatch'
+  value: number; // The weight or time
+  date: Timestamp;
+  notes?: string;
+};
+
 export type Athlete = {
   id: string;
   email: string;
@@ -17,7 +24,7 @@ export type Athlete = {
   instagramHandle?: string;
   tiktokHandle?: string;
   profilePictureUrl: string;
-  personalRecords?: Record<string, number | string>;
+  personalRecords?: PersonalRecord[];
   competitionHistory?: {
     competitionName: string;
     placing: number;
