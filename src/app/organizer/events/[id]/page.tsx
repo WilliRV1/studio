@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useParams, useRouter } from "next/navigation";
@@ -32,6 +31,7 @@ import { useState } from "react";
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RegistrationsDashboard } from "./_components/registrations-dashboard";
 
 
 const categorySchema = z.object({
@@ -161,8 +161,8 @@ export default function EventManagementPage() {
                 />
                 <div className="absolute inset-0 bg-black/50" />
             </div>
-             <div className="container mx-auto px-4 py-8 md:py-12 -mt-24">
-                <Card className="mb-8">
+             <div className="container mx-auto px-4 py-8 md:py-12 -mt-24 space-y-8">
+                <Card>
                     <CardHeader>
                         <CardTitle className="font-headline text-3xl">{competition.name}</CardTitle>
                          <CardDescription className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-2">
@@ -270,6 +270,8 @@ export default function EventManagementPage() {
                        )}
                     </CardContent>
                 </Card>
+                
+                <RegistrationsDashboard competition={competition} />
              </div>
         </div>
     )
