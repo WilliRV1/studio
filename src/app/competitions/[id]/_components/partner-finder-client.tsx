@@ -46,25 +46,25 @@ export default function PartnerFinderClient({ competition, category }: PartnerFi
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-headline text-2xl">Find Your Perfect Partner</CardTitle>
+        <CardTitle className="font-headline text-2xl">Encuentra tu Pareja Ideal</CardTitle>
         <CardDescription>
-          For the <span className="font-bold text-primary">{category.name}</span> category. Let our AI analyze athlete profiles to find the best match for your skills and goals.
+          Para la categoría <span className="font-bold text-primary">{category.name}</span>. Deja que nuestra IA analice perfiles de atletas para encontrar la mejor pareja para tus habilidades y metas.
         </CardDescription>
       </CardHeader>
       <CardContent className="text-center">
         {!suggestions && (
           <div className="max-w-md mx-auto">
             <p className="text-muted-foreground mb-6">
-              Ready to find a partner who complements your strengths? Click the button below to get started.
+              ¿Listo para encontrar una pareja que complemente tus fortalezas? Haz clic en el botón de abajo para empezar.
             </p>
             <Button size="lg" onClick={handleFindPartner} disabled={isLoading}>
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Analyzing...
+                  Analizando...
                 </>
               ) : (
-                "Suggest Partners"
+                "Sugerir Parejas"
               )}
             </Button>
           </div>
@@ -72,7 +72,7 @@ export default function PartnerFinderClient({ competition, category }: PartnerFi
 
         {suggestions && (
           <div>
-            <h3 className="font-headline text-xl mb-6 text-left">Top Suggestions for You</h3>
+            <h3 className="font-headline text-xl mb-6 text-left">Mejores Sugerencias para Ti</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {suggestions.map((suggestion) => {
                  const athlete = athletes.find(a => a.id === suggestion.athleteId);
@@ -87,7 +87,7 @@ export default function PartnerFinderClient({ competition, category }: PartnerFi
               })}
             </div>
              <Button variant="outline" className="mt-8" onClick={() => setSuggestions(null)}>
-                Start Over
+                Empezar de Nuevo
             </Button>
           </div>
         )}

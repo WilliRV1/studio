@@ -15,17 +15,17 @@ export default function Home() {
             WodMatch
           </h1>
           <p className="max-w-[700px] mx-auto text-lg md:text-xl text-foreground/80 mb-8 animate-fade-in-up">
-            The ultimate social platform for CrossFit athletes. Find competitions, connect with partners, and crush your goals.
+            La plataforma social definitiva para atletas de CrossFit. Encuentra competencias, conecta con parejas y supera tus metas.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in">
             <Button asChild size="lg" className="font-bold">
               <Link href="/competitions">
-                Find a Competition <ArrowRight className="ml-2" />
+                Buscar una Competencia <ArrowRight className="ml-2" />
               </Link>
             </Button>
             <Button asChild size="lg" variant="secondary" className="font-bold">
               <Link href="/dashboard">
-                Join The Community
+                Únete a la Comunidad
               </Link>
             </Button>
           </div>
@@ -35,7 +35,7 @@ export default function Home() {
       <section className="w-full py-16 md:py-24 bg-background">
         <div className="container mx-auto px-4 md:px-6">
           <h2 className="font-headline text-3xl md:text-4xl font-bold text-center mb-10">
-            Featured Competitions
+            Competencias Destacadas
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {featuredCompetitions.map((comp) => (
@@ -45,7 +45,7 @@ export default function Home() {
           <div className="text-center mt-12">
             <Button asChild variant="outline">
               <Link href="/competitions">
-                Explore All Competitions
+                Explorar Todas las Competencias
               </Link>
             </Button>
           </div>

@@ -164,7 +164,7 @@ export default function DashboardPage() {
                 <CardHeader className="flex-row items-center justify-between">
                     <div className="flex items-center gap-2">
                         <Trophy className="h-5 w-5 text-primary"/>
-                        <CardTitle className="font-headline text-xl">Personal Records</CardTitle>
+                        <CardTitle className="font-headline text-xl">Records Personales</CardTitle>
                     </div>
                     <Button variant="ghost" size="icon">
                         <PlusCircle className="h-5 w-5" />

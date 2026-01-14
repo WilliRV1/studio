@@ -47,11 +47,11 @@ export function AthleteCard({ athlete, suggestion }: AthleteCardProps) {
                     <TooltipTrigger asChild>
                         <div className="flex items-center gap-1 font-bold text-primary">
                             <Zap className="h-4 w-4" />
-                            <span>Compatibility: {suggestion.compatibilityScore}%</span>
+                            <span>Compatibilidad: {suggestion.compatibilityScore}%</span>
                         </div>
                     </TooltipTrigger>
                     <TooltipContent>
-                        <p>AI-powered compatibility score.</p>
+                        <p>Puntuación de compatibilidad impulsada por IA.</p>
                     </TooltipContent>
                 </Tooltip>
                </TooltipProvider>
@@ -61,7 +61,7 @@ export function AthleteCard({ athlete, suggestion }: AthleteCardProps) {
         )}
       </CardContent>
       <CardFooter>
-        <Button variant="secondary" className="w-full">View Profile</Button>
+        <Button variant="secondary" className="w-full">Ver Perfil</Button>
       </CardFooter>
     </Card>
   );

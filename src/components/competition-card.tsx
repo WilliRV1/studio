@@ -28,9 +28,9 @@ export function CompetitionCard({ competition, className }: CompetitionCardProps
               data-ai-hint="crossfit competition"
             />
             {isRegistrationOpen ? (
-              <Badge className="absolute top-3 right-3 bg-primary text-primary-foreground">Registration Open</Badge>
+              <Badge className="absolute top-3 right-3 bg-primary text-primary-foreground">Inscripciones Abiertas</Badge>
             ) : (
-               <Badge variant="secondary" className="absolute top-3 right-3">Registration Closed</Badge>
+               <Badge variant="secondary" className="absolute top-3 right-3">Inscripciones Cerradas</Badge>
             )}
           </div>
         </CardHeader>
@@ -48,7 +48,7 @@ export function CompetitionCard({ competition, className }: CompetitionCardProps
           </div>
         </CardContent>
         <CardFooter>
-            <p className="text-xs text-primary font-semibold">View Details &rarr;</p>
+            <p className="text-xs text-primary font-semibold">Ver Detalles &rarr;</p>
         </CardFooter>
       </Card>
     </Link>

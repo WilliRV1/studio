@@ -12,24 +12,24 @@ export default function OrganizerPage() {
         <div className="flex justify-between items-center mb-12">
             <div className="text-left">
                 <h1 className="font-headline text-4xl md:text-5xl font-bold tracking-tighter text-primary">
-                Organizer Dashboard
+                Panel de Organizador
                 </h1>
                 <p className="max-w-2xl mt-2 text-foreground/80">
-                Create, manage, and run your CrossFit competitions with ease.
+                Crea, gestiona y ejecuta tus competencias de CrossFit con facilidad.
                 </p>
             </div>
             <Button asChild>
                 <Link href="/organizer/create-event">
                     <PlusCircle className="mr-2 h-4 w-4" />
-                    Create New Event
+                    Crear Nuevo Evento
                 </Link>
             </Button>
         </div>
 
         <Card className="max-w-6xl mx-auto">
             <CardHeader>
-                <CardTitle className="font-headline">My Events</CardTitle>
-                <CardDescription>A list of competitions you are organizing.</CardDescription>
+                <CardTitle className="font-headline">Mis Eventos</CardTitle>
+                <CardDescription>Una lista de las competencias que estás organizando.</CardDescription>
             </CardHeader>
             <CardContent>
                 {organizerEvents.length > 0 ? (
@@ -38,12 +38,12 @@ export default function OrganizerPage() {
                     </div>
                 ) : (
                     <div className="text-center py-16 border-2 border-dashed rounded-lg">
-                        <h3 className="text-xl font-semibold mb-2">Create Your First Competition</h3>
-                        <p className="text-muted-foreground mb-6">Get started by setting up your next great event.</p>
+                        <h3 className="text-xl font-semibold mb-2">Crea tu Primera Competencia</h3>
+                        <p className="text-muted-foreground mb-6">Empieza por configurar tu próximo gran evento.</p>
                         <Button asChild>
                            <Link href="/organizer/create-event">
                              <PlusCircle className="mr-2 h-4 w-4" />
-                             Create New Event
+                             Crear Nuevo Evento
                            </Link>
                         </Button>
                     </div>

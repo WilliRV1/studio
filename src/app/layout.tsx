@@ -7,8 +7,8 @@ import { Footer } from '@/components/footer';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 
 export const metadata: Metadata = {
-  title: 'WodMatch - Find Your CrossFit Partner',
-  description: 'The ultimate social platform for CrossFit athletes. Find competitions, partners, and track your performance.',
+  title: 'WodMatch - Encuentra tu Pareja de CrossFit',
+  description: 'La plataforma social definitiva para atletas de CrossFit. Encuentra competencias, parejas y sigue tu rendimiento.',
 };
 
 export default function RootLayout({
@@ -17,7 +17,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="es" className="dark">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />

@@ -53,16 +53,16 @@ export default function CompetitionDetailPage({ params }: { params: { id: string
       <div className="container mx-auto px-4 py-8 md:py-12">
         <Tabs defaultValue="overview" className="w-full">
           <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 h-auto md:h-10 mb-8">
-            <TabsTrigger value="overview"><Users className="h-4 w-4 mr-2 hidden md:inline"/>Overview</TabsTrigger>
-            <TabsTrigger value="categories"><Trophy className="h-4 w-4 mr-2 hidden md:inline"/>Categories</TabsTrigger>
-            <TabsTrigger value="partner-finder" disabled={!partnerFinderCategory}><Search className="h-4 w-4 mr-2 hidden md:inline"/>Partner Finder</TabsTrigger>
+            <TabsTrigger value="overview"><Users className="h-4 w-4 mr-2 hidden md:inline"/>Información</TabsTrigger>
+            <TabsTrigger value="categories"><Trophy className="h-4 w-4 mr-2 hidden md:inline"/>Categorías</TabsTrigger>
+            <TabsTrigger value="partner-finder" disabled={!partnerFinderCategory}><Search className="h-4 w-4 mr-2 hidden md:inline"/>Buscar Pareja</TabsTrigger>
             <TabsTrigger value="leaderboard"><BarChart2 className="h-4 w-4 mr-2 hidden md:inline"/>Leaderboard</TabsTrigger>
           </TabsList>
           
           <TabsContent value="overview">
              <Card>
                 <CardHeader>
-                  <CardTitle className="font-headline">About {competition.name}</CardTitle>
+                  <CardTitle className="font-headline">Acerca de {competition.name}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <p className="text-muted-foreground">{competition.description}</p>
@@ -70,7 +70,7 @@ export default function CompetitionDetailPage({ params }: { params: { id: string
                     <Button asChild variant="outline">
                       <Link href={competition.rulesUrl} target="_blank">
                         <FileText className="mr-2 h-4 w-4"/>
-                        Download Rulebook
+                        Descargar Reglamento
                       </Link>
                     </Button>
                   )}
@@ -96,12 +96,12 @@ export default function CompetitionDetailPage({ params }: { params: { id: string
                     </div>
                     <div className="flex items-center text-sm text-muted-foreground">
                         <Users className="h-4 w-4 mr-2"/>
-                        {category.registeredCount} / {category.spots} spots filled
+                        {category.registeredCount} / {category.spots} cupos llenos
                     </div>
                   </CardContent>
                   <div className="p-6 pt-0">
                     <Button className="w-full font-bold" disabled={category.registeredCount >= category.spots}>
-                        {category.registeredCount >= category.spots ? 'Sold Out' : 'Register Now'}
+                        {category.registeredCount >= category.spots ? 'Agotado' : 'Inscríbete Ahora'}
                     </Button>
                   </div>
                 </Card>
@@ -115,10 +115,10 @@ export default function CompetitionDetailPage({ params }: { params: { id: string
             ) : (
                <Card className="text-center py-12">
                   <CardHeader>
-                    <CardTitle className="font-headline">No Paired Categories</CardTitle>
+                    <CardTitle className="font-headline">No hay categorías en pareja</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-muted-foreground">This competition does not have any categories that require a partner.</p>
+                    <p className="text-muted-foreground">Esta competencia no tiene categorías que requieran pareja.</p>
                   </CardContent>
                 </Card>
             )}
@@ -127,15 +127,15 @@ export default function CompetitionDetailPage({ params }: { params: { id: string
           <TabsContent value="leaderboard">
             <Card>
                 <CardHeader>
-                  <CardTitle className="font-headline">Live Leaderboard</CardTitle>
+                  <CardTitle className="font-headline">Leaderboard en Vivo</CardTitle>
                 </CardHeader>
                 <CardContent>
                    <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-[80px]">Rank</TableHead>
-                        <TableHead>Athlete/Team</TableHead>
-                        <TableHead className="text-right">Total Points</TableHead>
+                        <TableHead className="w-[80px]">Puesto</TableHead>
+                        <TableHead>Atleta/Equipo</TableHead>
+                        <TableHead className="text-right">Puntos Totales</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>

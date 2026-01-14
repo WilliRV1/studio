@@ -8,10 +8,10 @@ export default function CompetitionsPage() {
     <div className="container mx-auto px-4 py-8 md:py-12">
       <div className="text-center mb-12">
         <h1 className="font-headline text-4xl md:text-5xl font-bold tracking-tighter text-primary">
-          Competition Marketplace
+          Marketplace de Competencias
         </h1>
         <p className="max-w-2xl mx-auto mt-4 text-foreground/80">
-          Find your next challenge. Browse upcoming CrossFit competitions and sign up to compete.
+          Encuentra tu próximo desafío. Explora las próximas competencias de CrossFit e inscríbete para competir.
         </p>
       </div>
       
@@ -19,7 +19,7 @@ export default function CompetitionsPage() {
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           <Input 
-            placeholder="Search for a competition, location, or date..." 
+            placeholder="Buscar por competencia, ubicación, o fecha..." 
             className="pl-10 h-12 text-base"
           />
         </div>

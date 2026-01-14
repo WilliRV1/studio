@@ -28,9 +28,9 @@ import { collection, query, where } from "firebase/firestore";
 
 
 const navLinks = [
-  { href: "/competitions", label: "Competitions" },
+  { href: "/competitions", label: "Competencias" },
   { href: "/dashboard", label: "Dashboard", roles: ["Athlete", "Organizer", "Administrator"] },
-  { href: "/organizer", label: "Organizer", roles: ["Organizer", "Administrator"] },
+  { href: "/organizer", label: "Organizador", roles: ["Organizer", "Administrator"] },
 ];
 
 export function Header() {
@@ -135,24 +135,24 @@ export function Header() {
                       </Avatar>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                    <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild><Link href="/dashboard">Dashboard</Link></DropdownMenuItem>
-                    <DropdownMenuItem asChild><Link href="/profile">Profile Settings</Link></DropdownMenuItem>
+                    <DropdownMenuItem asChild><Link href="/profile">Ajustes de Perfil</Link></DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleSignOut} className="text-red-500 focus:text-red-500 focus:bg-red-500/10">
                       <LogOut className="mr-2 h-4 w-4" />
-                      <span>Log out</span>
+                      <span>Cerrar Sesión</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
                 <>
                   <Button variant="ghost" size="sm" asChild>
-                    <Link href="/login">Log In</Link>
+                    <Link href="/login">Iniciar Sesión</Link>
                   </Button>
                   <Button size="sm" asChild>
-                    <Link href="/signup">Sign Up</Link>
+                    <Link href="/signup">Regístrate</Link>
                   </Button>
                 </>
               )}
