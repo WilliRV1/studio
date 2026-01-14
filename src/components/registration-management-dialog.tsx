@@ -20,6 +20,7 @@ import { doc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import type { Registration, Competition, Category } from '@/lib/types';
 import Link from 'next/link';
+import { Progress } from '@/components/ui/progress';
 
 interface RegistrationManagementDialogProps {
   registration: Registration;
@@ -175,9 +176,9 @@ export function RegistrationManagementDialog({ registration, competition, catego
                  <div className="space-y-3">
                     <label htmlFor="payment-proof" className="font-medium">Sube tu comprobante</label>
                     <Input id="payment-proof" type="file" onChange={handleFileChange} accept="image/png, image/jpeg, application/pdf" />
+                     {isSubmitting && <Progress value={33} className="w-[60%]" />}
                      <Button onClick={handleUploadProof} disabled={isSubmitting || !paymentProofFile} className="w-full">
-                        {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
-                        Enviar Comprobante
+                        {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Subiendo...</> : <><Upload className="mr-2 h-4 w-4" /> Enviar Comprobante</>}
                     </Button>
                 </div>
             )}

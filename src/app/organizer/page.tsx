@@ -51,7 +51,7 @@ export default function OrganizerPage() {
                 Crea, gestiona y ejecuta tus competencias de CrossFit con facilidad.
                 </p>
             </div>
-            <Button asChild>
+            <Button asChild size="lg">
                 <Link href="/organizer/create-event">
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Crear Nuevo Evento
@@ -74,10 +74,10 @@ export default function OrganizerPage() {
                         ))}
                     </div>
                 ) : (
-                    <div className="text-center py-16 border-2 border-dashed rounded-lg">
+                    <div className="text-center py-16 border-2 border-dashed rounded-lg bg-muted/20">
                         <h3 className="text-xl font-semibold mb-2">Crea tu Primera Competencia</h3>
-                        <p className="text-muted-foreground mb-6">Empieza por configurar tu próximo gran evento.</p>
-                        <Button asChild>
+                        <p className="text-muted-foreground mb-6">Empieza por configurar tu próximo gran evento haciendo clic en el botón.</p>
+                        <Button asChild size="lg">
                            <Link href="/organizer/create-event">
                              <PlusCircle className="mr-2 h-4 w-4" />
                              Crear Nuevo Evento
