@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, addDoc, collection } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,7 +19,7 @@ import { PersonalInfoStep } from '@/components/onboarding/personal-info-step';
 import { LocationStep } from '@/components/onboarding/location-step';
 import { AthleteInfoStep } from '@/components/onboarding/athlete-info-step';
 import { Loader2 } from 'lucide-react';
-import { setDocumentNonBlocking } from '@/firebase';
+import { setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
 
 const onboardingSchema = z.object({
   // Personal Info
@@ -102,6 +102,15 @@ export default function OnboardingPage() {
     };
 
     setDocumentNonBlocking(userProfileRef, profileData, { merge: true });
+
+    // Assign default "Athlete" role
+    // NOTE: In a real app, the roleId for 'Athlete' should come from a trusted source, not hardcoded.
+    const athleteRoleRef = collection(firestore, 'athlete_roles');
+    addDocumentNonBlocking(athleteRoleRef, {
+      athleteId: user.uid,
+      roleId: 'role-athlete' // Hardcoded ID for 'Athlete' role
+    });
+
 
     toast({
         title: '¡Perfil completado!',

@@ -22,24 +22,43 @@ import {
 
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { useUser } from "@/firebase/provider";
+import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { getAuth, signOut } from "firebase/auth";
+import { collection, query, where } from "firebase/firestore";
 
 
 const navLinks = [
   { href: "/competitions", label: "Competitions" },
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/organizer", label: "Organizer" },
+  { href: "/dashboard", label: "Dashboard", roles: ["Athlete", "Organizer", "Administrator"] },
+  { href: "/organizer", label: "Organizer", roles: ["Organizer", "Administrator"] },
 ];
 
 export function Header() {
   const pathname = usePathname();
   const { user, isUserLoading } = useUser();
   const auth = getAuth();
+  const firestore = useFirestore();
+
+  const userRolesRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return query(collection(firestore, 'athlete_roles'), where('athleteId', '==', user.uid));
+  }, [firestore, user]);
+
+  const { data: userRoles } = useCollection(userRolesRef);
+  
+  const hasOrganizerRole = userRoles?.some(role => role.roleId === 'role-organizer' || role.roleId === 'role-admin');
 
   const handleSignOut = async () => {
     await signOut(auth);
   };
+
+  const filteredNavLinks = navLinks.filter(link => {
+    if (!link.roles) return true; // Public link
+    if (!user) return false; // Protected link requires user
+    if (link.href === '/organizer') return hasOrganizerRole;
+    return true; // For other roles or general dashboard
+  });
+
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -49,7 +68,7 @@ export function Header() {
             <WodMatchLogo />
           </Link>
           <nav className="flex items-center space-x-6 text-sm font-medium">
-            {navLinks.map((link) => (
+            {filteredNavLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
@@ -80,7 +99,7 @@ export function Header() {
               <WodMatchLogo />
             </Link>
             <div className="flex flex-col space-y-4 mt-6">
-              {navLinks.map((link) => (
+              {filteredNavLinks.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
